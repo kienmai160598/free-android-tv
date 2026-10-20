@@ -114,6 +114,7 @@ final class WidgetShelf {
     private String carried;
     private static final float ENTER_SCALE = 0.85f;
     private int lastColumns = MAX_CARDS, lastDockTop;
+    private int cellOrigin, cellPitch, cellWidth, tilePitch;
     private final TextView weatherPlace, weatherTemp, weatherDetail;
     private final ShapeBadge weatherIcon;
     private final TextView ramValue, storageValue;
@@ -212,7 +213,7 @@ final class WidgetShelf {
                 if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
                 int column = slots.indexOf(v);
                 if (code == KeyEvent.KEYCODE_DPAD_DOWN && downFromCard != null) {
-                    downFromCard.accept(Math.max(0, column));
+                    downFromCard.accept(dockColumnUnderCard(Math.max(0, column)));
                     return true;
                 }
                 // The row's ends: focus must not wrap off the shelf sideways.
@@ -265,7 +266,7 @@ final class WidgetShelf {
     boolean focusFromDock(int column) {
         int n = slots.size();
         if (!enabled || n == 0 || shelf.getAlpha() < 0.5f) return false;
-        return slots.get(Math.max(0, Math.min(column, n - 1))).requestFocus();
+        return slots.get(Math.max(0, Math.min(cardOverDockColumn(column), n - 1))).requestFocus();
     }
 
     /** The card header buttons should go down to: the last one, under them. */
@@ -572,6 +573,46 @@ final class WidgetShelf {
     }
 
     /** How many cards fit: one per dock column, at most four. */
+    private boolean measureDock(RecyclerView grid, int columns) {
+        int itemCount = grid.getAdapter() == null ? 0 : grid.getAdapter().getItemCount();
+        int lastColumn = Math.max(0, Math.min(columns, itemCount) - 1);
+        Rect first = tileBounds(grid, 0);
+        Rect second = lastColumn > 0 ? tileBounds(grid, 1) : null;
+        Rect last = tileBounds(grid, lastColumn);
+        if (first == null || last == null || (lastColumn > 0 && second == null)) return false;
+
+        int gap = second == null ? 0 : second.left - first.right;
+        int cells = slotsLimit();
+        int dockWidth = last.right - first.left;
+        cellOrigin = first.left;
+        cellWidth = (dockWidth - gap * (cells - 1)) / cells;
+        cellPitch = cellWidth + gap;
+        tilePitch = (dockWidth + gap) / (lastColumn + 1);
+        return true;
+    }
+
+    private Rect tileBounds(RecyclerView grid, int position) {
+        RecyclerView.ViewHolder holder = grid.findViewHolderForAdapterPosition(position);
+        View tile = holder == null ? null : holder.itemView.findViewById(R.id.card);
+        if (tile == null || tile.getWidth() == 0) return null;
+
+        Rect bounds = new Rect(0, 0, tile.getWidth(), tile.getHeight());
+        ((ViewGroup) shelf.getParent()).offsetDescendantRectToMyCoords(tile, bounds);
+        return bounds;
+    }
+
+    private int dockColumnUnderCard(int card) {
+        if (tilePitch <= 0) return card;
+        int center = card * cellPitch + cellWidth / 2;
+        return Math.max(0, Math.min(lastColumns - 1, center / tilePitch));
+    }
+
+    private int cardOverDockColumn(int column) {
+        if (cellPitch <= 0) return column;
+        int center = column * tilePitch + tilePitch / 2;
+        return center / cellPitch;
+    }
+
     private int slotsLimit() {
         return Math.min(MAX_CARDS, lastColumns);
     }
@@ -647,18 +688,14 @@ final class WidgetShelf {
             int visibility = slots.contains(c) ? View.VISIBLE : View.GONE;
             if (c.getVisibility() != visibility) c.setVisibility(visibility);
         }
-        ViewGroup parent = (ViewGroup) shelf.getParent();
+        if (!measureDock(grid, columns)) return;
+
         int inset = Math.round(WidgetCard.REACH_DP * density);
-        Rect r = new Rect();
-        for (int i = 0; i < slots.size(); i++) {
-            WidgetCard card = slots.get(i);
-            RecyclerView.ViewHolder vh = grid.findViewHolderForAdapterPosition(i);
-            View tile = vh == null ? null : vh.itemView.findViewById(R.id.card);
-            if (tile == null || tile.getWidth() == 0) return;   // not laid out yet: the next layout aligns
-            r.set(0, 0, tile.getWidth(), tile.getHeight());
-            parent.offsetDescendantRectToMyCoords(tile, r);
+        for (int index = 0; index < slots.size(); index++) {
+            WidgetCard card = slots.get(index);
             FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) card.getLayoutParams();
-            int left = r.left - inset - shelf.getLeft(), width = r.width() + 2 * inset;
+            int left = cellOrigin + index * cellPitch - inset - shelf.getLeft();
+            int width = cellWidth + 2 * inset;
             if (lp.leftMargin != left || lp.width != width) {
                 lp.leftMargin = left;
                 lp.width = width;
