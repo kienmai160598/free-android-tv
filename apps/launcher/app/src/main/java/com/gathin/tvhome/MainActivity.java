@@ -11,6 +11,7 @@ import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.graphics.Bitmap;
@@ -90,6 +91,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     static final String ACTION_LAUNCHER_SETTINGS = "com.gathin.tvhome.action.LAUNCHER_SETTINGS";
     /** Tiles per row and dock slots (res/values/config.xml, columns). Set in onCreate. */
     static int COLUMNS = 4;
+    private static final String COLUMNS_SETTING = "columns";
+    private SharedPreferences settingsPreferences;
+    private Config homeConfig;
+    private final SharedPreferences.OnSharedPreferenceChangeListener liveSettings = (preferences, key) -> {
+        if (!COLUMNS_SETTING.equals(key)) return;
+        int columns = preferences.getInt(key, COLUMNS);
+        if (columns != COLUMNS) applyColumns(columns);
+    };
     private boolean rtlAppGrid;
     private static final long MINUTE_MS = 60_000L;
     private static final long STATS_MS = 10_000L;
@@ -288,9 +297,12 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         density = getResources().getDisplayMetrics().density;
         // config.xml, overlaid by config.json from a pushed theme (see Config and tools/theme.sh).
         Config cfg = Config.load(this);
+        homeConfig = cfg;
         settingsKeycodes = cfg.settingsKeycodes;
         settingsKeyPanel = cfg.settingsKeyPanel;
         COLUMNS = cfg.columns;
+        settingsPreferences = getSharedPreferences(Config.SETTINGS_NAME, MODE_PRIVATE);
+        settingsPreferences.registerOnSharedPreferenceChangeListener(liveSettings);
         animations = cfg.animations;
         advancedEffects = cfg.animations && cfg.advancedEffects;
         reducedMotion = cfg.reducedMotion;
@@ -461,33 +473,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
         // tvOS layout: push the dock row towards the bottom of the screen, leaving room for
         // rows_below_dock grid rows under it; the rest of the grid stays below until you press Down.
-        int rowsBelowDock = cfg.rowsBelowDock;
-        grid.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
-            int h = b - t;
-            // Item height follows the tile size, which follows the columns and the rows that must fit (AppAdapter.tileWidthPx).
-            int inner = (r - l) - grid.getPaddingLeft() - grid.getPaddingRight();
-            int tileW = AppAdapter.tileWidthPx(inner, h, COLUMNS, rowsBelowDock, cfg.dockTitle, cfg.dockRow, density);
-            int itemH = AppAdapter.itemHeightPx(AppAdapter.tileHeightPx(tileW), density);
-            int dockRow = itemH + (int) (AppAdapter.DOCK_EXTRA_DP * density);   // item height plus DockDecoration offsets
-            int gridRows = itemH * rowsBelowDock;
-            // Keep the hero below the header when the library is enabled on a short screen,
-            // even when the theme requests an extra visible row below the dock.
-            int shelfClearance = cfg.appLibrary ? heroName.getMeasuredHeight() + (int) (40 * density) : 0;
-            // With no rows asked for under the dock, a fifth of the next row peeks up from the bottom edge: a
-            // deliberate hint that there is more below, and the open space goes between header and dock.
-            int below = rowsBelowDock == 0 && MainActivity.this.dockRow
-                    ? AppAdapter.peekPx(AppAdapter.tileHeightPx(tileW), density)
-                    : (int) (AppAdapter.BOTTOM_ROOM_DP * density);
-            int want = Math.max(shelfClearance, h - dockRow - gridRows - below);
-            // Where the rows cannot fit even at the smallest tile (3 rows with the title on), the title keeps its
-            // room above the dock and the last rows run off the bottom instead of the title drawing over the clock.
-            if (MainActivity.this.dockRow && cfg.dockTitle && rowsBelowDock > 0) want = Math.max(want, (int) (AppAdapter.TITLE_ROOM_DP * density));
-            // No dock to push down: the grid starts at the top, with room for the first row's zoom and glass.
-            if (!MainActivity.this.dockRow) want = (int) (AppAdapter.TOP_ROOM_DP * density);
-            if (grid.getPaddingTop() != want) {
-                grid.setPadding(grid.getPaddingLeft(), want, grid.getPaddingRight(), grid.getPaddingBottom());
-            }
-        });
+        grid.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> updateGridPadding(r - l, b - t));
 
         // Keep the glass glued to its tile while the grid scrolls.
         grid.addOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -704,6 +690,44 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     }
 
     /** Rebuilds the tiles (and the module cards), then puts focus back where it was. */
+    private void updateGridPadding(int width, int height) {
+        int rowsBelowDock = homeConfig.rowsBelowDock;
+        // Item height follows the tile size, which follows the columns and the rows that must fit (AppAdapter.tileWidthPx).
+        int inner = width - grid.getPaddingLeft() - grid.getPaddingRight();
+        int tileW = AppAdapter.tileWidthPx(inner, height, COLUMNS, rowsBelowDock, homeConfig.dockTitle, homeConfig.dockRow, density);
+        int itemH = AppAdapter.itemHeightPx(AppAdapter.tileHeightPx(tileW), density);
+        int dockRow = itemH + (int) (AppAdapter.DOCK_EXTRA_DP * density);   // item height plus DockDecoration offsets
+        int gridRows = itemH * rowsBelowDock;
+        // Keep the hero below the header when the library is enabled on a short screen,
+        // even when the theme requests an extra visible row below the dock.
+        int shelfClearance = homeConfig.appLibrary ? heroName.getMeasuredHeight() + (int) (40 * density) : 0;
+        // With no rows asked for under the dock, a fifth of the next row peeks up from the bottom edge: a
+        // deliberate hint that there is more below, and the open space goes between header and dock.
+        int below = rowsBelowDock == 0 && MainActivity.this.dockRow
+                ? AppAdapter.peekPx(AppAdapter.tileHeightPx(tileW), density)
+                : (int) (AppAdapter.BOTTOM_ROOM_DP * density);
+        int want = Math.max(shelfClearance, height - dockRow - gridRows - below);
+        // Where the rows cannot fit even at the smallest tile (3 rows with the title on), the title keeps its
+        // room above the dock and the last rows run off the bottom instead of the title drawing over the clock.
+        if (MainActivity.this.dockRow && homeConfig.dockTitle && rowsBelowDock > 0) want = Math.max(want, (int) (AppAdapter.TITLE_ROOM_DP * density));
+        // No dock to push down: the grid starts at the top, with room for the first row's zoom and glass.
+        if (!MainActivity.this.dockRow) want = (int) (AppAdapter.TOP_ROOM_DP * density);
+        if (grid.getPaddingTop() != want) {
+            grid.setPadding(grid.getPaddingLeft(), want, grid.getPaddingRight(), grid.getPaddingBottom());
+        }
+    }
+
+    private void applyColumns(int columns) {
+        COLUMNS = columns;
+        ((GridLayoutManager) grid.getLayoutManager()).setSpanCount(columns);
+        if (dockDecoration != null) dockDecoration.setDockSize(columns);
+        adapter.setDockSize(columns);
+        reloadTiles();
+        updateGridPadding(grid.getWidth(), grid.getHeight());
+        grid.swapAdapter(adapter, true);
+        restoreFocus();
+    }
+
     private void reloadApps(boolean animate) {
         cancelPendingFocusScroll();
         RecyclerView.ViewHolder footer = grid.findViewHolderForAdapterPosition(adapter.appCount());
@@ -843,6 +867,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     protected void onDestroy() {
         super.onDestroy();
         Palette.removeListener(paletteListener);
+        if (settingsPreferences != null) settingsPreferences.unregisterOnSharedPreferenceChangeListener(liveSettings);
         wallpaperPlayer.close();
         ConnectivityManager cm = getSystemService(ConnectivityManager.class);
         TvInputManager tim = (TvInputManager) getSystemService(TV_INPUT_SERVICE);

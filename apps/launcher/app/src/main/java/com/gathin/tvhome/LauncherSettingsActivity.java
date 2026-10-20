@@ -43,6 +43,8 @@ import java.util.concurrent.Executors;
 public final class LauncherSettingsActivity extends Activity {
     private SharedPreferences choices;
     private static final int[] COLUMN_OPTIONS = {4, 5, 6, 7};
+    private static final String TURN_OFF_COMMAND = "input keyevent KEYCODE_SLEEP";
+    private static final String RESTART_COMMAND = "reboot";
     private TextView columnsChoice;
     private TextView animationsChoice;
     private TextView advancedChoice;
@@ -102,8 +104,8 @@ public final class LauncherSettingsActivity extends Activity {
                 icon(R.drawable.ic_open_in_new), null);
         TextView rebootChoice = findViewById(R.id.rebootChoice);
         rebootChoice.setText(item(getString(R.string.reboot), getString(R.string.reboot_desc)));
-        rebootChoice.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(R.drawable.ic_refresh), null, null, null);
-        rebootChoice.setOnClickListener(v -> confirmReboot(config));
+        rebootChoice.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(R.drawable.ic_power), null, null, null);
+        rebootChoice.setOnClickListener(v -> confirmPower(config));
 
         nameChoice = findViewById(R.id.nameChoice);
         nameChoice.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(R.drawable.ic_person), null, null, null);
@@ -290,25 +292,14 @@ public final class LauncherSettingsActivity extends Activity {
         float d = getResources().getDisplayMetrics().density;
         LinearLayout panel = dialogPanel(R.string.columns_label, p, d);
 
-        LinearLayout options = new LinearLayout(this);
-        options.setOrientation(LinearLayout.VERTICAL);
-        LinearLayout.LayoutParams optionsLayout = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        optionsLayout.topMargin = (int) (16 * d);
-        panel.addView(options, optionsLayout);
-
+        LinearLayout options = dialogOptionList(panel, d);
         TextView current = null;
         TextView[] rows = new TextView[COLUMN_OPTIONS.length];
         for (int index = 0; index < COLUMN_OPTIONS.length; index++) {
             int value = COLUMN_OPTIONS[index];
-            TextView row = new TextView(this, null, 0, R.style.SettingsListItem);
-            row.setText(String.valueOf(value));
-            row.setFocusable(true);
-            row.setClickable(true);
             int radio = value == columns ? R.drawable.ic_radio_on : R.drawable.ic_radio_off;
-            row.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(radio), null, null, null);
-            options.addView(row, new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            TextView row = optionRow(String.valueOf(value), radio);
+            options.addView(row);
             rows[index] = row;
             if (value == columns) current = row;
         }
@@ -324,33 +315,42 @@ public final class LauncherSettingsActivity extends Activity {
         (current != null ? current : rows[0]).requestFocus();
     }
 
-    private void confirmReboot(Config config) {
+    private void confirmPower(Config config) {
         Palette p = Palette.currentOrBaseline();
         float d = getResources().getDisplayMetrics().density;
-        LinearLayout panel = dialogPanel(R.string.reboot_confirm, p, d);
+        LinearLayout panel = dialogHeroPanel(R.drawable.ic_power, R.string.reboot, R.string.boot_options_message, p, d);
+
+        LinearLayout options = dialogOptionList(panel, d);
+        TextView restart = optionRow(item(getString(R.string.reboot_action), getString(R.string.restart_desc)),
+                R.drawable.ic_refresh);
+        TextView turnOff = optionRow(item(getString(R.string.power_off_action), getString(R.string.power_off_desc)),
+                R.drawable.ic_power);
+        options.addView(restart);
+        options.addView(turnOff);
 
         LinearLayout buttons = dialogButtonRow(panel, d);
         TextView cancel = dialogButton(android.R.string.cancel, d);
-        TextView restart = dialogButton(R.string.reboot_action, d);
         buttons.addView(cancel);
-        buttons.addView(restart);
-        ((LinearLayout.LayoutParams) restart.getLayoutParams()).setMarginStart((int) (8 * d));
 
         Dialog dialog = showDialog(panel, p, config, d);
         cancel.setOnClickListener(v -> dialog.dismiss());
         restart.setOnClickListener(v -> {
             dialog.dismiss();
-            reboot();
+            runPowerCommand(RESTART_COMMAND);
+        });
+        turnOff.setOnClickListener(v -> {
+            dialog.dismiss();
+            runPowerCommand(TURN_OFF_COMMAND);
         });
         cancel.requestFocus();
     }
 
-    private void reboot() {
+    private void runPowerCommand(String command) {
         LocalAdb adb = new LocalAdb(this);
         worker.execute(() -> {
             int problem;
             try {
-                adb.shell("reboot");
+                adb.shell(command);
                 return;
             } catch (LocalAdb.OffException e) {
                 problem = R.string.running_off;
@@ -368,8 +368,58 @@ public final class LauncherSettingsActivity extends Activity {
         if (columns == value) return;
         columns = value;
         choices.edit().putInt("columns", value).apply();
-        setResult(RESULT_OK);
         refresh();
+    }
+
+    private LinearLayout dialogHeroPanel(int iconRes, int titleText, int messageText, Palette p, float d) {
+        LinearLayout panel = dialogPanel(titleText, p, d);
+        TextView title = (TextView) panel.getChildAt(0);
+        title.setGravity(Gravity.CENTER_HORIZONTAL);
+        title.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        ShapeBadge badge = new ShapeBadge(this, null);
+        badge.setPalette(p);
+        badge.setIcon(getDrawable(iconRes).mutate());
+        int badgeSize = (int) (48 * d);
+        LinearLayout.LayoutParams badgeLayout = new LinearLayout.LayoutParams(badgeSize, badgeSize);
+        badgeLayout.gravity = Gravity.CENTER_HORIZONTAL;
+        badgeLayout.bottomMargin = (int) (16 * d);
+        panel.addView(badge, 0, badgeLayout);
+
+        TextView message = new TextView(this);
+        message.setText(messageText);
+        message.setTextSize(14f);
+        message.setTextColor(p.onSurfaceVariant);
+        message.setGravity(Gravity.CENTER_HORIZONTAL);
+        LinearLayout.LayoutParams messageLayout = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        messageLayout.topMargin = (int) (8 * d);
+        panel.addView(message, messageLayout);
+        return panel;
+    }
+
+    private LinearLayout dialogOptionList(LinearLayout panel, float d) {
+        LinearLayout options = new LinearLayout(this);
+        options.setOrientation(LinearLayout.VERTICAL);
+        options.setClipChildren(false);
+        options.setClipToPadding(false);
+        LinearLayout.LayoutParams optionsLayout = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        optionsLayout.topMargin = (int) (20 * d);
+        panel.addView(options, optionsLayout);
+        return options;
+    }
+
+    private TextView optionRow(CharSequence text, int iconRes) {
+        TextView row = new TextView(this, null, 0, R.style.SettingsListItem);
+        row.setText(text);
+        row.setFocusable(true);
+        row.setClickable(true);
+        row.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(iconRes), null, null, null);
+        row.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        return row;
     }
 
     private LinearLayout dialogButtonRow(LinearLayout panel, float d) {

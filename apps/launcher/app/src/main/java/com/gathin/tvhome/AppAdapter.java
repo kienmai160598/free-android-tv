@@ -186,7 +186,7 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     /** Reorder mode: no empty dock slots, so every position holds a tile that can move. */
     private boolean reordering;
     private final TileListener listener;
-    private final int dockSize;
+    private int dockSize;
     /** config dock_row: false makes the dock apps the first tiles of one plain grid (names shown, no empty slots). */
     private final boolean dockRow;
     /** Dock order (config.xml dock_apps, or a theme's config.json). */
@@ -211,6 +211,10 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
      * was most of the return stutter; an update installs a new APK path, so it still gets new art.
      */
     private final Map<String, Drawable[]> art = new HashMap<>();
+
+    void setDockSize(int size) {
+        dockSize = size;
+    }
 
     AppAdapter(Context ctx, TileListener listener, int dockSize, Config cfg) {
         this.ctx = ctx;

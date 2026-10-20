@@ -216,8 +216,11 @@
     <string name="try_again">Try again</string>
     <string name="animations_desc">Off moves focus instantly, lightest on slow TVs</string>
     <string name="widgets_desc">Weather, air quality, lunar date and system stats</string>
-    <string name="reboot">Restart TV</string>
+    <string name="reboot">Boot options</string>
     <string name="reboot_desc">Needs network debugging on</string>
-    <string name="reboot_confirm">Restart the TV now?</string>
     <string name="reboot_action">Restart</string>
+    <string name="power_off_action">Turn off</string>
+    <string name="boot_options_message">Choose what the TV does next</string>
+    <string name="restart_desc">Turns the TV off and on again</string>
+    <string name="power_off_desc">Standby, the remote\'s power button wakes it</string>
 </resources>

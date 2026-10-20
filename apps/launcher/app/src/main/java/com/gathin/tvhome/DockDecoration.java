@@ -18,7 +18,7 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
     /** Space between the tiles and the container's edge, on every side. */
     static final float PADDING_DP = 12f;
 
-    private final int dockSize;
+    private int dockSize;
     private final float density;
     private final Paint band = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF rect = new RectF();
@@ -27,6 +27,10 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
         this.dockSize = dockSize;
         this.density = density;
         band.setColor(Palette.currentOrBaseline().surfaceContainer);   // until Home applies its scheme
+    }
+
+    void setDockSize(int size) {
+        dockSize = size;
     }
 
     /** The scheme's surfaceContainer. */

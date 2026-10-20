@@ -194,8 +194,11 @@
     <string name="try_again">Thử lại</string>
     <string name="animations_desc">Tắt để focus chuyển ngay, nhẹ nhất cho TV yếu</string>
     <string name="widgets_desc">Thời tiết, chất lượng không khí, lịch âm và thông số máy</string>
-    <string name="reboot">Khởi động lại TV</string>
+    <string name="reboot">Tùy chọn khởi động</string>
     <string name="reboot_desc">Cần bật gỡ lỗi qua mạng</string>
-    <string name="reboot_confirm">Khởi động lại TV ngay?</string>
     <string name="reboot_action">Khởi động lại</string>
+    <string name="power_off_action">Tắt</string>
+    <string name="boot_options_message">Chọn TV sẽ làm gì tiếp theo</string>
+    <string name="restart_desc">Tắt rồi bật lại TV</string>
+    <string name="power_off_desc">Chế độ chờ, bấm nút nguồn trên remote để bật lại</string>
 </resources>
