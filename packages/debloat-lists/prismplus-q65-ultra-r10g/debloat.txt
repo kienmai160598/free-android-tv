@@ -44,7 +44,7 @@ com.wbd.stream                              # Max, off by choice
 com.google.android.apps.tv.launcherx
 # Left enabled: com.google.android.tungsten.setupwraith (disabling it also disables Google Assistant "Hey Google").
 #   Careful: on most Google TV sets setupwraith's RecoveryActivity takes Home once launcherx is off and
-#   crash-loops system_server (docs/TROUBLESHOOTING.md). The install script checks where Home lands and rolls
+#   crash-loops system_server (docs/troubleshooting.md). The install script checks where Home lands and rolls
 #   back; if it does on yours, disable setupwraith too (forget and re-join Wi-Fi first, it owns the network).
 
 # KEEP: com.realtek.dtv, com.realtek.tv.atv (HDMI and other inputs). Left enabled: com.realtek.airplay2.

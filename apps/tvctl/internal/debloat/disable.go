@@ -15,7 +15,7 @@ type DisableOptions struct {
 
 const insecureADBWarning = "Warning: this TV reports ro.adb.secure=0, so network ADB on port 5555 accepts any device on\n" +
 	"your network without the \"Allow\" prompt. When you are done, turn USB debugging and\n" +
-	"Network/ADB debugging off on the TV and reboot it (README: \"When you are done: close ADB\").\n"
+	"Network/ADB debugging off on the TV and reboot it, then check with: scripts/tvctl closed.\n"
 
 func Disable(dev tv.Device, recordPath, listPath, host string, opts DisableOptions, out, warn io.Writer) error {
 	names, err := ReadList(listPath)

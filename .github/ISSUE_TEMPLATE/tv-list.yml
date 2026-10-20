@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Lists people have tested live in [`packages/debloat-lists/`](../tree/main/examples). If you already have a working list, a pull request is even better: see [docs/contributing.md](../blob/main/CONTRIBUTING.md).
+        Lists people have tested live in [`packages/debloat-lists/`](../tree/main/packages/debloat-lists). If you already have a working list, a pull request is even better: see [docs/contributing.md](../blob/main/CONTRIBUTING.md).
   - type: input
     id: model
     attributes:

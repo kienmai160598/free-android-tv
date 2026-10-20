@@ -729,7 +729,7 @@ func TestADBSecureWarning(t *testing.T) {
 			if got := strings.Contains(r.warn, "ro.adb.secure=0"); got != c.warns {
 				t.Errorf("warned = %v\n%s", got, r.warn)
 			}
-			if c.warns && !strings.Contains(r.warn, "When you are done: close ADB") {
+			if c.warns && !strings.Contains(r.warn, "scripts/tvctl closed") {
 				t.Error("the note points at the README answer")
 			}
 
