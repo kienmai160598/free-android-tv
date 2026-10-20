@@ -11,18 +11,20 @@ Locales: English and Vietnamese only.
 | Component | Role |
 |---|---|
 | `.MainActivity` | Home: header, widget shelf, dock, grid, Inputs/network/settings pills |
-| `.LauncherSettingsActivity`, `.QuickSettingsActivity`, `.HomeSettingsActivity` | On-TV settings, gear-key panel, default-home picker |
-| `.InputKeyService` | Accessibility: Input button (`KEYCODE_TV`, `KEYCODE_TV_INPUT`, `input_key_keycodes`), `app_keys` |
+| `.LauncherSettingsActivity`, `.QuickSettingsActivity`, `.HomeSettingsActivity` | On-TV settings (side sheet), gear-key panel, default-home picker |
+| `.RunningAppsActivity` | Running apps side sheet: switch to or force-stop apps, through `LocalAdb` |
+| `.InputKeyService` | Accessibility: Input button (`KEYCODE_TV`, `KEYCODE_TV_INPUT`, `input_key_keycodes`), `app_keys`, `running_apps_keycodes` |
 | `.HomeKeyService` | Accessibility: Home that sends `KEYCODE_ALL_APPS`, `settings_key_*`, `app_keys` |
-| `.NowPlayingListener` | Notification listener used only to read media sessions |
 | `.ClockDream` | Clock screensaver |
 
 ## Code map
 
-- Motion and shape: `Motion` (expressive spring tokens), `Shapes`, `Expressive`, `FocusIndicator`, `GlassView` (springs' model), `LabelReveal`, `MenuHighlight`.
+- Motion and shape: `Motion` (expressive spring tokens), `Shapes`, `Expressive`, `FocusIndicator`, `GlassView` (springs' model), `LabelReveal`, `MenuHighlight`, `ShelfHighlight`, `SpringItemAnimator` (Edit Home), `SideSheet`.
 - Colour and skin: `Palette` (Tonal Spot from `background_color` or wallpaper), `M3Skin` (styles views by `android:tag`), `M3Switch`, `M3Progress`, `ShapeBadge`, `SettingsBanner`.
 - Home content: `AppAdapter`, `Order`, `DockSlots`, `DockDecoration`, `GridNavigation`, `LibraryApps`, `AppLibraryDialog`.
-- Widgets: `WidgetShelf`, `WidgetCard`, `Weather` (Open-Meteo, the only network use), `LunarCalendar`, `Shamsi`.
+- Widgets: `WidgetShelf`, `WidgetCard`, `Weather` and `AirQuality` (Open-Meteo; the place from ipwho.is or geojs.io), `CpuMeter` (cpuidle in sysfs, since `/proc/stat` is hidden), `LunarCalendar`, `Shamsi`.
+- Network pill: `SpeedTest` (Cloudflare `speed.cloudflare.com`, only when asked from the Wi-Fi menu).
+- Running apps: `LocalAdb` (adb client to `127.0.0.1:5555` with its own key in `files/adbkey`; the TV asks once to allow it), `BackgroundApps` (`ps` and recent tasks, `am force-stop`). Port 5555 is gone after a reboot until `adb tcpip 5555` runs again.
 - Backgrounds: `WallpaperPlayer`, `WallpaperRotation`, `WallpaperSize`, `Sky`/`SkyView`, `ExpressiveBackdrop`.
 - Festive skin: `Festival`, `DiyaDrawable`, `BellDrawable`, `MarigoldDrawable`, `PetalShowerView`.
 - Config: `Config` reads `res/values/config.xml`, overlaid by `/sdcard/Android/data/com.gathin.tvhome/files/config.json` (a theme).
@@ -42,6 +44,7 @@ Unknown or mistyped theme keys are ignored; a theme that does not parse is ignor
 | `columns` (1-8), `rows_below_dock` (0-3), `dock_row`, `dock_title`, `reorder_button` | Grid and dock layout |
 | `live_tv_package`, `live_tv_action`, `source_panel_service`, `source_panel_action`, `input_action` | Live TV and input switching on odd firmware |
 | `input_key_keycodes`, `app_keys` (`"190:pkg"`), `settings_key_keycodes`, `settings_key_scancodes`, `settings_key_panel` | Remote buttons for the key services |
+| `running_apps_keycodes` (`config.xml` only, not in the contract) | Buttons that open the running apps panel; 284 `KEYCODE_ALL_APPS`, 187 `KEYCODE_APP_SWITCH` |
 | `animations`, `advanced_effects`, `reduced_motion` | Motion level; reduced for weak GPUs (MediaTek MT5895) |
 | `background_color`, `wallpaper`, `wallpaper_rotation_minutes` (0-1440), `wallpaper_dim` (0-90), `sky_intensity` (0-100) | Backdrop; seeds the colour scheme |
 | `widgets`, `weather_city`, `show_stats` | Widget shelf; empty city means locate by IP |

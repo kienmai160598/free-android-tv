@@ -1,10 +1,23 @@
 package com.gathin.tvhome;
 
 import android.app.Activity;
+import android.widget.EditText;
+import android.view.inputmethod.EditorInfo;
+import android.view.WindowManager;
+import android.view.Window;
+import android.view.Gravity;
+import android.graphics.drawable.GradientDrawable;
+import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.content.res.ColorStateList;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.SpannableStringBuilder;
@@ -18,7 +31,10 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-/** Remote-friendly settings owned by the launcher; system settings stay one row away. */
+/**
+ * Remote-friendly settings owned by the launcher, as a side sheet over Home: grouped lists under group
+ * labels (Home, You, Motion, System, About), each row with its icon. System settings stay one row away.
+ */
 public final class LauncherSettingsActivity extends Activity {
     private SharedPreferences choices;
     private final TextView[] columnChoices = new TextView[4];
@@ -26,8 +42,16 @@ public final class LauncherSettingsActivity extends Activity {
     private TextView advancedChoice;
     private M3Switch animationsSwitch;
     private M3Switch advancedSwitch;
-    private M3Switch darkSwitch;
     private M3Switch widgetsSwitch;
+    private TextView nameChoice;
+    private TextView widgetsChoice;
+    private TextView tvSettingsChoice;
+    private SideSheet sideSheet;
+    private Palette palette;
+    /** Google TV's own home screen, which tvctl turns off when this launcher takes over. */
+    private static final String STOCK_LAUNCHER = "com.google.android.apps.tv.launcherx";
+    /** The name Home greets with ("Good night, Kien"); greeting_name in config.xml until set here. */
+    static final String NAME_KEY = "greeting_name";
     private int columns;
     private boolean animations;
     private boolean advancedEffects;
@@ -35,8 +59,9 @@ public final class LauncherSettingsActivity extends Activity {
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
+        overridePendingTransition(0, 0);
         Palette.loadDarkMode(this);
-        getWindow().setBackgroundDrawable(new ColorDrawable(Palette.currentOrBaseline().surface));
+        palette = Palette.currentOrBaseline();
         setContentView(R.layout.activity_launcher_settings);
         choices = getSharedPreferences(Config.SETTINGS_NAME, MODE_PRIVATE);
         Config config = Config.load(this);
@@ -76,53 +101,199 @@ public final class LauncherSettingsActivity extends Activity {
         // A plain switch: the row's supporting text says what it does, no dialog in the way.
         advancedChoice.setOnClickListener(v -> setAdvanced(!advancedEffects));
         float density = getResources().getDisplayMetrics().density;
-        Palette palette = Palette.currentOrBaseline();
         animationsSwitch = new M3Switch(density, palette, config.animations);
         advancedSwitch = new M3Switch(density, palette, config.animations);
-        animationsChoice.setCompoundDrawablesRelativeWithIntrinsicBounds(null, null, animationsSwitch, null);
-        advancedChoice.setCompoundDrawablesRelativeWithIntrinsicBounds(null, null, advancedSwitch, null);
-        ((TextView) findViewById(R.id.tvSettingsChoice)).setText(getString(R.string.tv_settings));
-        TextView darkChoice = findViewById(R.id.darkThemeChoice);
-        darkChoice.setText(getString(R.string.dark_theme));
-        darkSwitch = new M3Switch(density, palette, config.animations);
-        darkSwitch.setChecked(Palette.darkMode());
-        darkChoice.setCompoundDrawablesRelativeWithIntrinsicBounds(null, null, darkSwitch, null);
-        darkChoice.setOnClickListener(v -> {
-            boolean dark = !Palette.darkMode();
-            choices.edit().putBoolean(Palette.DARK_KEY, dark).apply();
-            darkSwitch.setChecked(dark);
-            // Republish the scheme in the new appearance: Home behind follows through its listener, and
-            // this page re-skins in place so focus and the switch's motion carry on.
-            Palette.setDarkMode(dark);
-            reskin(config);
-        });
-        TextView widgetsChoice = findViewById(R.id.widgetsChoice);
+        animationsChoice.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(R.drawable.ic_animation), null, animationsSwitch, null);
+        advancedChoice.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(R.drawable.ic_auto_awesome), null, advancedSwitch, null);
+        tvSettingsChoice = findViewById(R.id.tvSettingsChoice);
+        tvSettingsChoice.setText(getString(R.string.tv_settings));
+        tvSettingsChoice.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(R.drawable.ic_settings), null,
+                icon(R.drawable.ic_open_in_new), null);
+        nameChoice = findViewById(R.id.nameChoice);
+        nameChoice.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(R.drawable.ic_person), null, null, null);
+        showName();
+        nameChoice.setOnClickListener(v -> editName(config));
+        widgetsChoice = findViewById(R.id.widgetsChoice);
         widgetsChoice.setText(getString(R.string.widgets));
         boolean widgetsDefault = getResources().getBoolean(R.bool.widgets);
         widgetsSwitch = new M3Switch(density, palette, config.animations);
         widgetsSwitch.setChecked(choices.getBoolean(WidgetShelf.PREF_KEY, widgetsDefault));
-        widgetsChoice.setCompoundDrawablesRelativeWithIntrinsicBounds(null, null, widgetsSwitch, null);
+        widgetsChoice.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(R.drawable.ic_widgets), null, widgetsSwitch, null);
         widgetsChoice.setOnClickListener(v -> {
             // Home reads it when it shows again.
             boolean on = !choices.getBoolean(WidgetShelf.PREF_KEY, widgetsDefault);
             choices.edit().putBoolean(WidgetShelf.PREF_KEY, on).apply();
             widgetsSwitch.setChecked(on);
         });
-        findViewById(R.id.tvSettingsChoice).setOnClickListener(v ->
-                open(new Intent(Settings.ACTION_SETTINGS)));
+        tvSettingsChoice.setOnClickListener(v -> open(new Intent(Settings.ACTION_SETTINGS)));
+        showAbout();
         refresh();
-        View content = ((ViewGroup) findViewById(android.R.id.content)).getChildAt(0);
-        M3Skin.apply(content, Palette.currentOrBaseline(), config.animations, config.reducedMotion);
+        View sheet = findViewById(R.id.sheet);
+        GradientDrawable sheetBg = new GradientDrawable();
+        sheetBg.setColor(palette.surface);
+        sheetBg.setCornerRadius(Shapes.EXTRA_LARGE * density);
+        sheet.setBackground(sheetBg);
+        sheet.setClipToOutline(true);
+        M3Skin.apply(sheet, palette, config.animations, config.reducedMotion);
+        View scrim = findViewById(R.id.scrim);
+        sideSheet = new SideSheet(this, scrim, sheet, config);
+        scrim.setOnClickListener(v -> sideSheet.close());
+        sideSheet.slideIn();
         columnChoices[Math.max(0, Math.min(columns - 4, 3))].requestFocus();
     }
 
-    /** Paints this page again in the current scheme (after a dark/light change). */
-    private void reskin(Config config) {
+    @Override
+    public void onBackPressed() {
+        sideSheet.close();
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, 0);
+    }
+
+    /** A row's icon: onSurfaceVariant at rest, the focused list item's content colour on focus. */
+    private Drawable icon(int res) {
+        Drawable d = getDrawable(res).mutate();
+        d.setTintList(new ColorStateList(new int[][]{{android.R.attr.state_focused}, {}},
+                new int[]{palette.inverseOnSurface, palette.onSurfaceVariant}));
+        return d;
+    }
+
+    /** About: this launcher's version, whether Home opens it, and whether Google TV's own home is off. */
+    private void showAbout() {
+        PackageManager pm = getPackageManager();
+        TextView version = findViewById(R.id.versionInfo);
+        String name = "";
+        try {
+            PackageInfo info = pm.getPackageInfo(getPackageName(), 0);
+            name = info.versionName;
+        } catch (PackageManager.NameNotFoundException ignored) {
+        }
+        version.setText(item(getString(R.string.about_version), name));
+        version.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(R.drawable.ic_info), null, null, null);
+
+        TextView home = findViewById(R.id.defaultInfo);
+        ResolveInfo r = pm.resolveActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),
+                PackageManager.MATCH_DEFAULT_ONLY);
+        boolean isDefault = r != null && r.activityInfo != null && getPackageName().equals(r.activityInfo.packageName);
+        home.setText(item(getString(R.string.about_default),
+                getString(isDefault ? R.string.about_default_yes : R.string.about_default_no)));
+        home.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(R.drawable.ic_home), null, null, null);
+        home.setOnClickListener(v -> open(new Intent(Settings.ACTION_HOME_SETTINGS)));
+
+        TextView stock = findViewById(R.id.stockInfo);
+        int state;
+        try {
+            int setting = pm.getApplicationEnabledSetting(STOCK_LAUNCHER);
+            boolean off = setting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                    || setting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
+                    || setting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED;
+            state = off ? R.string.about_stock_off : R.string.about_stock_on;
+        } catch (IllegalArgumentException e) {
+            state = R.string.about_stock_none;
+        }
+        stock.setText(item(getString(R.string.about_stock), getString(state)));
+        stock.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(R.drawable.ic_tv), null, null, null);
+        // Its App info page: where it can be turned back on (tvctl's undo does the same from a computer).
+        stock.setOnClickListener(v -> open(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.fromParts("package", STOCK_LAUNCHER, null))));
+    }
+
+    private String name() {
+        return choices.getString(NAME_KEY, getString(R.string.greeting_name)).trim();
+    }
+
+    private void showName() {
+        String name = name();
+        nameChoice.setText(item(getString(R.string.your_name), name.isEmpty() ? getString(R.string.your_name_none) : name));
+    }
+
+    /** A small M3 dialog with one outlined text field; empty clears the name (the greeting alone). */
+    private void editName(Config config) {
         Palette p = Palette.currentOrBaseline();
-        View content = ((ViewGroup) findViewById(android.R.id.content)).getChildAt(0);
-        M3Skin.apply(content, p, config.animations, config.reducedMotion);
-        for (M3Switch s : new M3Switch[]{animationsSwitch, advancedSwitch, darkSwitch, widgetsSwitch}) s.setPalette(p);
-        getWindow().setBackgroundDrawable(new ColorDrawable(p.surface));
+        float d = getResources().getDisplayMetrics().density;
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setTag("m3:panel");
+        int pad = (int) (24 * d);
+        panel.setPadding(pad, pad, pad, pad);
+
+        TextView title = new TextView(this);
+        title.setText(R.string.your_name);
+        title.setTextSize(24f);
+        title.setTextColor(p.onSurface);
+        panel.addView(title);
+
+        EditText field = new EditText(this);
+        field.setSingleLine(true);
+        field.setText(name());
+        field.setSelection(field.getText().length());
+        field.setHint(R.string.your_name);
+        field.setTextSize(18f);
+        field.setTextColor(p.onSurface);
+        field.setHintTextColor(p.onSurfaceVariant);
+        field.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        GradientDrawable box = new GradientDrawable();
+        box.setCornerRadius(Shapes.EXTRA_SMALL * d);
+        box.setStroke((int) (2 * d), p.primary);
+        field.setBackground(box);
+        int fp = (int) (16 * d);
+        field.setPadding(fp, fp, fp, fp);
+        LinearLayout.LayoutParams flp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        flp.topMargin = (int) (16 * d);
+        panel.addView(field, flp);
+
+        LinearLayout buttons = new LinearLayout(this);
+        buttons.setGravity(Gravity.END);
+        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        blp.topMargin = (int) (24 * d);
+        panel.addView(buttons, blp);
+        TextView cancel = dialogButton(android.R.string.cancel, d);
+        TextView save = dialogButton(R.string.save, d);
+        buttons.addView(cancel);
+        buttons.addView(save);
+        ((LinearLayout.LayoutParams) save.getLayoutParams()).setMarginStart((int) (8 * d));
+
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(panel);
+        M3Skin.apply(panel, p, config.animations, config.reducedMotion);
+        Window w = dialog.getWindow();
+        if (w != null) {
+            w.setBackgroundDrawable(new ColorDrawable(0));
+            w.setLayout((int) (520 * d), ViewGroup.LayoutParams.WRAP_CONTENT);
+            w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+        }
+        Runnable commit = () -> {
+            choices.edit().putString(NAME_KEY, field.getText().toString().trim()).apply();
+            showName();
+            dialog.dismiss();
+        };
+        save.setOnClickListener(v -> commit.run());
+        cancel.setOnClickListener(v -> dialog.dismiss());
+        field.setOnEditorActionListener((v, action, event) -> {
+            if (action != EditorInfo.IME_ACTION_DONE) return false;
+            commit.run();
+            return true;
+        });
+        dialog.show();
+        field.requestFocus();
+    }
+
+    private TextView dialogButton(int text, float d) {
+        TextView b = new TextView(this);
+        b.setText(text);
+        b.setTag("m3:button");
+        b.setGravity(Gravity.CENTER);
+        b.setFocusable(true);
+        b.setClickable(true);
+        b.setTextSize(15f);
+        int h = (int) (24 * d);
+        b.setPadding(h, 0, h, 0);
+        b.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, (int) (40 * d)));
+        return b;
     }
 
     private void setAdvanced(boolean enabled) {

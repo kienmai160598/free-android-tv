@@ -31,7 +31,7 @@ final class Palette {
     final int seed;
     /** Dark or light Tonal Spot scheme for the seed. */
     final boolean dark;
-    /** The appearance new schemes are built in (Launcher settings, "dark_theme"; dark unless turned off). */
+    /** The appearance new schemes are built in: the system's (dark unless the system says light). */
     private static boolean darkMode = true;
     final int primary, onPrimary, primaryContainer, onPrimaryContainer;
     final int secondary, secondaryContainer, onSecondaryContainer;
@@ -40,6 +40,8 @@ final class Palette {
     final int onSurface, onSurfaceVariant, outlineVariant;
     /** TV focus roles (androidx.tv.material3): focused buttons and list items invert; cards get an outline border. */
     final int surfaceVariant, inverseSurface, inverseOnSurface, inversePrimary, outline;
+    /** Something needs attention (the Wi-Fi pill when the signal is weak or the Internet is gone). */
+    final int error;
 
     private static Palette current;
     private static final List<Runnable> listeners = new ArrayList<>();
@@ -70,6 +72,7 @@ final class Palette {
         inversePrimary = c.inversePrimary().getArgb(s);
         outline = c.outline().getArgb(s);
         outlineVariant = c.outlineVariant().getArgb(s);
+        error = c.error().getArgb(s);
     }
 
     static Palette fromSeed(int seed) {
@@ -116,14 +119,14 @@ final class Palette {
         if (current != null && current.dark != dark) publish(new Palette(current.seed, dark));
     }
 
-    /** Loads the saved appearance (call before the first scheme is built). */
+    /**
+     * Follows the system's appearance (call before the first scheme is built, and again when the
+     * configuration changes). An undefined night mode counts as dark, as Google TV is.
+     */
     static void loadDarkMode(android.content.Context context) {
-        boolean dark = context.getSharedPreferences(Config.SETTINGS_NAME, android.content.Context.MODE_PRIVATE)
-                .getBoolean(DARK_KEY, true);
-        setDarkMode(dark);
+        int night = context.getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
+        setDarkMode(night != android.content.res.Configuration.UI_MODE_NIGHT_NO);
     }
-
-    static final String DARK_KEY = "dark_theme";
 
     /** The same seed in the dark scheme, for surfaces that must stay dark (the screensaver). */
     static Palette dark(Palette p) {

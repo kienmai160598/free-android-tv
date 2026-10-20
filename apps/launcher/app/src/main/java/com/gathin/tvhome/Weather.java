@@ -36,15 +36,29 @@ final class Weather {
         final double temp, high, low;
         final int code;
         final boolean day;
+        /** Now: the felt temperature, relative humidity (%) and wind (km/h). */
+        final double feels, wind;
+        final int humidity;
+        /** Tomorrow: the high and low, the sky and the chance of rain (%). */
+        final double tomorrowHigh, tomorrowLow;
+        final int tomorrowCode, tomorrowRain;
         final long fetchedAt;
 
-        Report(String place, double temp, double high, double low, int code, boolean day, long fetchedAt) {
+        Report(String place, double temp, double high, double low, int code, boolean day, double feels, int humidity,
+               double wind, double tomorrowHigh, double tomorrowLow, int tomorrowCode, int tomorrowRain, long fetchedAt) {
             this.place = place;
             this.temp = temp;
             this.high = high;
             this.low = low;
             this.code = code;
             this.day = day;
+            this.feels = feels;
+            this.humidity = humidity;
+            this.wind = wind;
+            this.tomorrowHigh = tomorrowHigh;
+            this.tomorrowLow = tomorrowLow;
+            this.tomorrowCode = tomorrowCode;
+            this.tomorrowRain = tomorrowRain;
             this.fetchedAt = fetchedAt;
         }
 
@@ -95,34 +109,73 @@ final class Weather {
     static Report cached(Context context) {
         SharedPreferences p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         if (!p.contains("fetched")) return null;
+        // A report saved before the details and tomorrow were kept counts as stale, so it is fetched again.
+        long fetched = p.contains("t_code") ? p.getLong("fetched", 0) : 0;
         return new Report(p.getString("place", ""), p.getFloat("temp", 0), p.getFloat("high", 0), p.getFloat("low", 0),
-                p.getInt("code", 0), p.getBoolean("day", true), p.getLong("fetched", 0));
+                p.getInt("code", 0), p.getBoolean("day", true), p.getFloat("feels", 0), p.getInt("humidity", 0),
+                p.getFloat("wind", 0), p.getFloat("t_high", 0), p.getFloat("t_low", 0), p.getInt("t_code", 0),
+                p.getInt("t_rain", 0), fetched);
+    }
+
+    /** Where the widgets report on: a name and coordinates. */
+    static final class Place {
+        final String name;
+        final double lat, lon;
+
+        Place(String name, double lat, double lon) {
+            this.name = name;
+            this.lat = lat;
+            this.lon = lon;
+        }
+    }
+
+    /**
+     * Off the main thread: the place for city (empty: the IP's), looked up at most once a day and kept
+     * in preferences. Shared by the weather and the air quality widgets.
+     */
+    static Place place(Context context, String city) throws IOException, JSONException {
+        SharedPreferences p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        String lang = Locale.getDefault().getLanguage();
+        long now = System.currentTimeMillis();
+        String placeKey = city + "|" + lang;
+        if (!placeKey.equals(p.getString("place_key", null)) || now - p.getLong("place_at", 0) > PLACE_MS
+                || !p.contains("place_name")) {
+            double[] at = new double[2];
+            int bar = city.indexOf('|');   // "name|country": only a match in that country counts
+            String name = city.isEmpty() ? placeFromIp(lang, at)
+                    : bar < 0 ? geocode(city, lang, null, at) : geocode(city.substring(0, bar), lang, city.substring(bar + 1), at);
+            p.edit().putString("place_key", placeKey).putLong("place_at", now).putString("place_name", name)
+                    .putFloat("lat", (float) at[0]).putFloat("lon", (float) at[1]).apply();
+        }
+        return new Place(p.getString("place_name", ""), p.getFloat("lat", 0), p.getFloat("lon", 0));
     }
 
     /** Off the main thread: a fresh report, saved for next time. city may be empty (use the IP's place). */
     static Report fetch(Context context, String city) throws IOException, JSONException {
         SharedPreferences p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-        String lang = Locale.getDefault().getLanguage();
         long now = System.currentTimeMillis();
-        String placeKey = city + "|" + lang;
-        if (!placeKey.equals(p.getString("place_key", null)) || now - p.getLong("place_at", 0) > PLACE_MS) {
-            double[] at = new double[2];
-            String name = city.isEmpty() ? placeFromIp(lang, at) : geocode(city, lang, null, at);
-            p.edit().putString("place_key", placeKey).putLong("place_at", now).putString("place", name)
-                    .putFloat("lat", (float) at[0]).putFloat("lon", (float) at[1]).apply();
-        }
-        String place = p.getString("place", "");
+        Place at = place(context, city);
+        String place = at.name;
         JSONObject f = get(String.format(Locale.US,
-                "https://api.open-meteo.com/v1/forecast?latitude=%.4f&longitude=%.4f&current=temperature_2m,weather_code,is_day"
-                        + "&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1",
-                p.getFloat("lat", 0), p.getFloat("lon", 0)));
+                "https://api.open-meteo.com/v1/forecast?latitude=%.4f&longitude=%.4f"
+                        + "&current=temperature_2m,weather_code,is_day,apparent_temperature,relative_humidity_2m,wind_speed_10m"
+                        + "&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max"
+                        + "&timezone=auto&forecast_days=2",
+                at.lat, at.lon));
         JSONObject current = f.getJSONObject("current");
         JSONObject daily = f.getJSONObject("daily");
-        Report r = new Report(place, current.getDouble("temperature_2m"),
-                daily.getJSONArray("temperature_2m_max").getDouble(0), daily.getJSONArray("temperature_2m_min").getDouble(0),
-                current.getInt("weather_code"), current.optInt("is_day", 1) == 1, now);
+        JSONArray max = daily.getJSONArray("temperature_2m_max"), min = daily.getJSONArray("temperature_2m_min");
+        JSONArray codes = daily.getJSONArray("weather_code"), rain = daily.getJSONArray("precipitation_probability_max");
+        Report r = new Report(place, current.getDouble("temperature_2m"), max.getDouble(0), min.getDouble(0),
+                current.getInt("weather_code"), current.optInt("is_day", 1) == 1,
+                current.optDouble("apparent_temperature", current.getDouble("temperature_2m")),
+                current.optInt("relative_humidity_2m", 0), current.optDouble("wind_speed_10m", 0),
+                max.getDouble(1), min.getDouble(1), codes.getInt(1), rain.isNull(1) ? 0 : rain.getInt(1), now);
         p.edit().putString("place", r.place).putFloat("temp", (float) r.temp).putFloat("high", (float) r.high)
-                .putFloat("low", (float) r.low).putInt("code", r.code).putBoolean("day", r.day).putLong("fetched", now).apply();
+                .putFloat("low", (float) r.low).putInt("code", r.code).putBoolean("day", r.day)
+                .putFloat("feels", (float) r.feels).putInt("humidity", r.humidity).putFloat("wind", (float) r.wind)
+                .putFloat("t_high", (float) r.tomorrowHigh).putFloat("t_low", (float) r.tomorrowLow)
+                .putInt("t_code", r.tomorrowCode).putInt("t_rain", r.tomorrowRain).putLong("fetched", now).apply();
         return r;
     }
 
@@ -168,7 +221,7 @@ final class Weather {
         throw new IOException("no place called " + city);
     }
 
-    private static JSONObject get(String url) throws IOException, JSONException {
+    static JSONObject get(String url) throws IOException, JSONException {
         HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
         c.setConnectTimeout(TIMEOUT_MS);
         c.setReadTimeout(TIMEOUT_MS);

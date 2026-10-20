@@ -170,10 +170,10 @@ final class M3Skin {
             e.corners(new float[]{rest, rest, rest, rest}, new float[]{F, F, F, F});
         }
         ViewGroup.LayoutParams lp = v.getLayoutParams();
-        lp.height = (int) (56 * density);
-        v.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        lp.height = (int) (40 * density);
+        v.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
         v.setTypeface(font(R.font.sans_medium));
-        int pad = (int) (24 * density);
+        int pad = (int) (16 * density);
         v.setPadding(pad, 0, pad, 0);
         e.update();
     }

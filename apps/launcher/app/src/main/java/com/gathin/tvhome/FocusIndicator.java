@@ -29,6 +29,8 @@ final class FocusIndicator extends RecyclerView.ItemDecoration {
 
     static final float PADDING_DP = 4f;
     static final float POP_FROM_DP = 1f;
+    /** How far it reaches while its tile is carried in Edit Home: lifted, still inside the dock's 12dp padding. */
+    static final float LIFT_DP = 8f;
 
     private final View model;
     private final ViewGroup root;
@@ -127,9 +129,24 @@ final class FocusIndicator extends RecyclerView.ItemDecoration {
         scrollShift = shift;
     }
 
+    private boolean lifted;
+
+    /** Edit Home picked the tile up (wider reach) or put it down, on the same fast spatial spring as the pop. */
+    void setLifted(boolean on) {
+        if (on == lifted) return;
+        lifted = on;
+        float target = on ? LIFT_DP : PADDING_DP;
+        if (!animations) {
+            padDp = target;
+            grid.invalidate();
+        } else {
+            pop.animateToFinalPosition(target);
+        }
+    }
+
     /** A tile took focus: the indicator grows out from behind it on a fast spatial spring. */
     void pop() {
-        if (!animations) return;
+        if (!animations || lifted) return;   // a carried tile moving keeps its lift
         pop.cancel();
         padDp = POP_FROM_DP;
         pop.animateToFinalPosition(PADDING_DP);

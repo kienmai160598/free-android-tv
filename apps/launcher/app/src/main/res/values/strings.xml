@@ -32,7 +32,6 @@
     <string name="launcher_settings">Launcher settings</string>
     <string name="columns_label">Apps per row</string>
     <string name="animations_state">Animations: %1$s</string>
-    <string name="dark_theme">Dark theme</string>
     <string name="advanced_effects">Expressive motion</string>
     <string name="advanced_effects_state">Advanced effects: %1$s</string>
     <string name="advanced_effects_warning">Bouncier, zoomier animations. Turn it off if the TV gets slow.</string>
@@ -68,11 +67,7 @@
     <string name="card_state_new">New</string>
     <string name="card_state_new_key">New key</string>
     <string name="card_state_new_label">New name</string>
-    <string name="dock_edit">Edit dock</string>
-    <string name="dock_edit_hint">Choose the dock place to change and press OK. Back to finish.</string>
-    <string name="dock_edit_pick_app">Now choose the app to put there and press OK. Back to choose another place.</string>
     <string name="reorder">Reorder apps</string>
-    <string name="reorder_hint">OK picks up an app, arrows move it, Back places it. Back again to finish.</string>
     <string name="reorder_not_saved">Couldn\'t save the new order</string>
     <string name="app_library">App library</string>
     <string name="library_empty">No launchable apps found</string>
@@ -82,9 +77,9 @@
     <string name="library_open">Open</string>
     <string name="library_app_info">App info</string>
     <string name="library_save_failed">Could not save the shortcut</string>
-    <string name="library_recent">New · Add to Home</string>
-    <string name="library_hint_add">Press to add to Home · Hold for options</string>
-    <string name="library_hint_open">Press to open · Hold for options</string>
+    <string name="library_recent">New, add to Home</string>
+    <string name="library_hint_add">Press to add to Home, hold for options</string>
+    <string name="library_hint_open">Press to open, hold for options</string>
     <plurals name="library_app_count">
         <item quantity="one">%1$d app</item>
         <item quantity="other">%1$d apps</item>
@@ -100,7 +95,7 @@
     <string name="widget_storage">Storage</string>
     <string name="widget_used_of">%1$s / %2$s</string>
     <string name="lunar_calendar">Lunar calendar</string>
-    <string name="lunar_year">Lunar · %s</string>
+    <string name="lunar_year">Lunar year %s</string>
     <string name="lunar_leap">%s (leap)</string>
     <string name="holiday_in_days">%1$s in %2$d days</string>
     <string name="holiday_tomorrow">%s is tomorrow</string>
@@ -120,13 +115,103 @@
     <string name="weather_rain">Rain</string>
     <string name="weather_snow">Snow</string>
     <string name="weather_thunder">Thunderstorm</string>
-    <string name="weather_range">%1$s · %2$d° / %3$d°</string>
+    <string name="weather_range">%1$s, %2$d° / %3$d°</string>
+    <string name="weather_feels">Feels like</string>
+    <string name="weather_details">Humidity %1$d%%, wind %2$d km/h</string>
+    <string name="weather_details_mph">Humidity %1$d%%, wind %2$d mph</string>
+    <string name="weather_tomorrow">%s tomorrow</string>
+    <string name="weather_tomorrow_detail">Low %1$d°, %2$d%% rain</string>
     <string name="weather_offline">Can\'t reach the weather service</string>
-    <string name="now_playing">Now playing</string>
-    <string name="now_playing_idle">Nothing playing</string>
-    <string name="now_playing_permission">Needs notification access</string>
     <string name="widget_add">Add widget</string>
-    <string name="widget_move_left">Move left</string>
-    <string name="widget_move_right">Move right</string>
     <string name="widget_remove">Remove</string>
+
+    <!-- Edit Home (apps, dock and widgets) -->
+    <string name="edit_home">Edit Home</string>
+    <string name="edit_home_done">Done editing</string>
+    <string name="edit_home_moving">Moving %s</string>
+    <string name="edit_home_hint">OK picks up an app or widget. The top row is the dock. Back to finish.</string>
+    <string name="edit_home_hint_carrying">Arrows move it, into the dock too. OK puts it down.</string>
+    <string name="edit_home_hint_widget">Left and right move it. OK puts it down.</string>
+    <string name="tile_move">Move</string>
+    <string name="app_info">App info</string>
+    <string name="widget_cpu">CPU</string>
+
+    <!-- Air quality widget -->
+    <string name="air_quality">Air quality</string>
+    <string name="air_tomorrow">%s tomorrow</string>
+    <string name="air_detail">%1$s, PM2.5 %2$d</string>
+    <string name="air_detail_tomorrow">%s at its worst</string>
+    <string name="air_offline">Can\'t reach the air quality service</string>
+    <string name="aqi_good">Good</string>
+    <string name="aqi_moderate">Moderate</string>
+    <string name="aqi_sensitive">Unhealthy for some</string>
+    <string name="aqi_unhealthy">Unhealthy</string>
+    <string name="aqi_very_unhealthy">Very unhealthy</string>
+    <string name="aqi_hazardous">Hazardous</string>
+
+    <!-- Widget settings -->
+    <string name="widget_settings">Settings</string>
+    <string name="setting_location">Location: %s</string>
+    <string name="setting_location_shared">Location (shared with Weather): %s</string>
+    <string name="setting_unit">Unit: %s</string>
+    <string name="setting_countdown">Count down to: %s</string>
+    <string name="countdown_next">Next holiday</string>
+    <string name="countdown_tet">Tết only</string>
+    <string name="setting_cpu">CPU: %s</string>
+    <string name="option_shown">Shown</string>
+    <string name="option_hidden">Hidden</string>
+    <string name="widget_city_auto">Automatic (from IP)</string>
+
+    <!-- Greeting name (Launcher settings) -->
+    <string name="settings_group_home">Home</string>
+    <string name="settings_group_you">You</string>
+    <string name="settings_group_motion">Motion</string>
+    <string name="settings_group_system">System</string>
+    <string name="settings_group_about">About</string>
+    <string name="about_version">Version</string>
+    <string name="about_default">Default launcher</string>
+    <string name="about_default_yes">This launcher</string>
+    <string name="about_default_no">Another app. Choose to change it.</string>
+    <string name="about_stock">Google TV home screen</string>
+    <string name="about_stock_off">Turned off</string>
+    <string name="about_stock_on">Turned on</string>
+    <string name="about_stock_none">Not on this TV</string>
+    <string name="your_name">Your name</string>
+    <string name="your_name_none">Not set</string>
+    <string name="save">Save</string>
+
+    <!-- Wi-Fi menu (hold OK on the Wi-Fi pill) -->
+    <string name="wifi_change">Change network</string>
+    <string name="signal_weak">Weak signal</string>
+
+    <!-- Wi-Fi pill and speed test -->
+    <string name="wifi_label_detail">%1$s (%2$s)</string>
+    <string name="wifi_no_internet">No internet</string>
+    <string name="speed_test">Test speed</string>
+    <string name="speed_starting">Starting</string>
+    <string name="speed_measuring">Measuring: %d Mbps</string>
+    <string name="speed_result">%1$d Mbps, %2$s, ping %3$d ms</string>
+    <string name="speed_failed">Couldn\'t test the speed</string>
+    <string name="speed_4k">good for 4K</string>
+    <string name="speed_hd">good for HD</string>
+    <string name="speed_sd">SD only</string>
+    <string name="speed_slow">too slow for video</string>
+
+    <!-- Running apps panel (the remote's Apps button; stops apps through adb on the TV itself) -->
+    <string name="running_apps">Running apps</string>
+    <string name="running_connecting">Connecting to the TV</string>
+    <string name="running_allow">If the TV asks to allow debugging, tick Always allow and choose Allow</string>
+    <string name="running_off">Network adb is off. Run adb tcpip 5555 from a computer, then try again.</string>
+    <string name="running_denied">The TV did not allow it. Try again and choose Allow.</string>
+    <string name="running_failed">Couldn\'t read the running apps</string>
+    <string name="running_none">Nothing is running in the background</string>
+    <plurals name="running_count">
+        <item quantity="one">%d app</item>
+        <item quantity="other">%d apps</item>
+    </plurals>
+    <string name="running_summary">%1$s, %2$s in use</string>
+    <string name="running_hint">OK switches to it, hold OK stops it</string>
+    <string name="running_on_screen">On screen, %s</string>
+    <string name="running_stop_all">Stop all</string>
+    <string name="try_again">Try again</string>
 </resources>

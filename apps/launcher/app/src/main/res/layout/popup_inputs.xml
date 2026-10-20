@@ -9,9 +9,20 @@
     android:padding="6dp"
     android:elevation="12dp">
 
-    <LinearLayout
-        android:id="@+id/rows"
+    <!-- Scrolls when the menu is taller than the room on screen (MainActivity.dropIn caps the height);
+         moving focus down a long list scrolls it along. -->
+    <ScrollView
+        android:id="@+id/rowsScroll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical" />
+        android:fadingEdge="none"
+        android:overScrollMode="never"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/rows"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
 </LinearLayout>

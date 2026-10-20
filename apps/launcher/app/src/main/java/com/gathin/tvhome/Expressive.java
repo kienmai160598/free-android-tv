@@ -38,6 +38,8 @@ final class Expressive {
     private final float[] radii = new float[8];
     private int restBg, restFg, selectedBg, selectedFg, activeBg, activeFg;
     private boolean tintIcons = true;
+    /** An icon colour of its own at rest (0: the content colour); focus blends it to the content colour. */
+    private int iconTint;
     /** The label's opacity on top of its colour, for a label that fades in as its button grows. */
     private float labelAlpha = 1f;
     private boolean choice;
@@ -113,6 +115,13 @@ final class Expressive {
     Expressive asListItem() {
         listItem = true;
         return this;
+    }
+
+    /** Colours the icon apart from the label at rest, e.g. error for a warning; 0 goes back to normal. */
+    void iconTint(int argb) {
+        if (argb == iconTint) return;
+        iconTint = argb;
+        applyColors();
     }
 
     /** Fades the text alone (not the icon), 0 to 1. */
@@ -205,6 +214,7 @@ final class Expressive {
         background.setColor((int) argb.evaluate(colorProgress, baseBg, activeBg));
         int fg = (int) argb.evaluate(colorProgress, baseFg, activeFg);
         view.setTextColor(labelAlpha >= 1f ? fg : Palette.alpha(fg, Math.round((fg >>> 24) * labelAlpha)));
-        if (tintIcons) view.setCompoundDrawableTintList(ColorStateList.valueOf(fg));
+        int icon = iconTint == 0 ? fg : (int) argb.evaluate(colorProgress, iconTint, activeFg);
+        if (tintIcons) view.setCompoundDrawableTintList(ColorStateList.valueOf(icon));
     }
 }

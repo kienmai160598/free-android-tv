@@ -62,19 +62,6 @@
                 <!-- The header texts use gravity left, not start: the launcher lays out left to right
                      (no supportsRtl), and with start a right-to-left script such as Arabic would move to the
                      right edge of these full-width lines instead of staying under the clock. -->
-                <TextView
-                    android:id="@+id/greeting"
-                    android:gravity="left"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:singleLine="true"
-                    android:ellipsize="end"
-                    android:layout_marginStart="0dp"
-                    android:textColor="#8CFFFFFF"
-                    android:textSize="16sp"
-                    android:fontFamily="@font/sans_medium"
-                    android:letterSpacing="0.01" />
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -88,7 +75,7 @@
                         android:format12Hour="h:mm"
                         android:format24Hour="HH:mm"
                         android:textColor="#FFFFFFFF"
-                        android:textSize="57sp"
+                        android:textSize="56sp"
                         android:fontFamily="@font/sans_display"
                         android:letterSpacing="-0.04"
                         android:includeFontPadding="false" />
@@ -99,7 +86,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
                         android:layout_gravity="bottom"
-                        android:layout_marginBottom="8dp"
+                        android:layout_marginBottom="5dp"
                         android:format12Hour="a"
                         android:format24Hour=""
                         android:textColor="#B3FFFFFF"
@@ -108,8 +95,10 @@
                         android:letterSpacing="0.08"
                         android:textAllCaps="true" />
 
+                    <!-- Gone: the compact header sets the date beside the clock with only a gap. -->
                     <View
                         android:id="@+id/clockDivider"
+                        android:visibility="gone"
                         android:layout_width="1dp"
                         android:layout_height="26dp"
                         android:layout_gravity="bottom"
@@ -122,9 +111,23 @@
                         android:layout_width="0dp"
                         android:layout_weight="1"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="bottom"
-                        android:layout_marginBottom="9dp"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="24dp"
                         android:orientation="vertical">
+
+                        <!-- At a Glance: the greeting and the date stacked beside the clock, centred on its
+                             digits (MainActivity.alignHeader). -->
+                        <TextView
+                            android:id="@+id/greeting"
+                            android:gravity="left"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:singleLine="true"
+                            android:ellipsize="end"
+                                                        android:textColor="#8CFFFFFF"
+                            android:textSize="20sp"
+                            android:fontFamily="@font/sans_medium"
+                            android:letterSpacing="0.01" />
 
                         <!-- Shamsi date ("27 Mehr 1405"), shown when shamsi_date is on. -->
                         <TextView
@@ -153,7 +156,8 @@
                             android:format12Hour="@string/date_format_home"
                             android:format24Hour="@string/date_format_home"
                             android:textColor="#A6FFFFFF"
-                            android:textSize="14sp"
+                            android:layout_marginTop="2dp"
+                            android:textSize="16sp"
                             android:fontFamily="@font/sans_regular"
                             android:letterSpacing="0.03" />
                     </LinearLayout>
@@ -244,6 +248,54 @@
                 android:scrollbars="none"
                 android:descendantFocusability="afterDescendants" />
         </FrameLayout>
+    </LinearLayout>
+
+    <!-- Edit Home's floating toolbar (M3E): what OK and Back do right now. Not focusable; MainActivity
+         colours it (secondaryContainer) and shows it only while the mode is on. -->
+    <LinearLayout
+        android:id="@+id/editBar"
+        android:layout_width="wrap_content"
+        android:layout_height="56dp"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="24dp"
+        android:elevation="3dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="20dp"
+        android:paddingEnd="28dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/editBarIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="14dp"
+            android:src="@drawable/ic_swap_vert_filled" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/editBarTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/sans_medium"
+                android:includeFontPadding="false"
+                android:singleLine="true"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/editBarHint"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:fontFamily="@font/sans_regular"
+                android:includeFontPadding="false"
+                android:singleLine="true"
+                android:textSize="12sp" />
+        </LinearLayout>
     </LinearLayout>
 
     <!-- The single floating glass highlight that springs between tiles. -->

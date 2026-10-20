@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- M3E icon states: outlined at rest, filled while the control is focused. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true" android:drawable="@drawable/ic_wifi_2_filled" />
+    <item android:drawable="@drawable/ic_wifi_2_outline" />
+</selector>

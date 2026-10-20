@@ -68,6 +68,13 @@
          reach InputKeyService. Leave empty to omit. -->
     <integer-array name="input_key_keycodes">
     </integer-array>
+    <!-- Remote buttons that open the running apps panel (RunningAppsActivity, INPUT_KEY_SERVICE=1), by Android
+         keycode: 284 KEYCODE_ALL_APPS (the Xiaomi remote layout gives it scancode 216) and 187 KEYCODE_APP_SWITCH.
+         The panel reads and stops apps through adb on port 5555 of the TV itself. Leave empty to omit. -->
+    <integer-array name="running_apps_keycodes">
+        <item>284</item>
+        <item>187</item>
+    </integer-array>
     <!-- Remote buttons that open an app, as "keycode:package" or "KEYCODE_NAME:package" (INPUT_KEY_SERVICE=1 or
          HOME_KEY_SERVICE=1; both read this one list, and a theme's config.json can set it too). On Google TV the
          YouTube button sends 190 (KEYCODE_BUTTON_3) to the stock launcher, so it does nothing once launcherx
@@ -83,7 +90,7 @@
     <bool name="shamsi_date">false</bool>
 
     <!-- A name after the greeting: "Mr. Trịnh" shows GOOD MORNING, MR. TRỊNH. Empty: the greeting alone. -->
-    <string name="greeting_name" translatable="false"></string>
+    <string name="greeting_name" translatable="false">Kien</string>
     <!-- Optional VPN app the network pill opens (hold the pill for Wi-Fi settings), e.g. the package of the
          VPN you use. Empty: the pill opens Wi-Fi settings. The green VPN badge shows for any VPN either way;
          with an app set here, a red "VPN off" badge also shows while no VPN is up. -->
@@ -92,8 +99,8 @@
          shelf above it. false makes the dock apps simply the first tiles of one plain grid (still in dock_apps
          order, no empty slots), with names under every tile and the glow behind every focused tile. -->
     <bool name="dock_row">true</bool>
-    <!-- A reorder button (two arrows) in the top bar. Off by default: reordering is also in the Settings
-         button's long-press menu, so it needs no extra button on screen. -->
+    <!-- A button (two arrows) in the top bar for Edit Home (apps, dock and widgets). Off by default: Edit
+         Home is also in the Settings button's long-press menu and on every tile's, so it needs no button. -->
     <bool name="reorder_button">false</bool>
 
     <!-- Grid rows left visible under the dock on the home screen. 0 = dock sits at the very bottom. Tiles shrink if

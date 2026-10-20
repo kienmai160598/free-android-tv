@@ -5,7 +5,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widgetShelf"
     android:layout_width="match_parent"
-    android:layout_height="@dimen/widget_card_height"
+    android:layout_height="@dimen/widget_shelf_height"
     android:clipChildren="false"
     android:clipToPadding="false"
     android:visibility="gone">
@@ -13,7 +13,8 @@
     <com.gathin.tvhome.WidgetCard
         android:id="@+id/widgetWeather"
         android:layout_width="0dp"
-        android:layout_height="match_parent">
+        android:layout_height="@dimen/widget_card_height"
+        android:layout_gravity="center_vertical">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -55,7 +56,8 @@
     <com.gathin.tvhome.WidgetCard
         android:id="@+id/widgetSystem"
         android:layout_width="0dp"
-        android:layout_height="match_parent">
+        android:layout_height="@dimen/widget_card_height"
+        android:layout_gravity="center_vertical">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -63,12 +65,31 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <TextView
-                android:id="@+id/systemLabel"
-                style="@style/WidgetLabel"
-                android:text="@string/widget_system" />
+            <LinearLayout
+                android:id="@+id/cpuRow"
+                style="@style/WidgetMeterRow">
+
+                <ImageView
+                    android:id="@+id/cpuIcon"
+                    style="@style/WidgetMeterIcon"
+                    android:src="@drawable/ic_memory" />
+
+                <TextView
+                    android:id="@+id/cpuName"
+                    style="@style/WidgetMeterName"
+                    android:text="@string/widget_cpu" />
+
+                <TextView
+                    android:id="@+id/cpuValue"
+                    style="@style/WidgetMeterValue" />
+            </LinearLayout>
+
+            <com.gathin.tvhome.M3Progress
+                android:id="@+id/cpuBar"
+                style="@style/WidgetMeterBar" />
 
             <View
+                android:id="@+id/cpuGap"
                 android:layout_width="0dp"
                 android:layout_height="0dp"
                 android:layout_weight="1" />
@@ -78,7 +99,7 @@
                 <ImageView
                     android:id="@+id/ramIcon"
                     style="@style/WidgetMeterIcon"
-                    android:src="@drawable/ic_memory" />
+                    android:src="@drawable/ic_ram" />
 
                 <TextView
                     android:id="@+id/ramName"
@@ -94,9 +115,12 @@
                 android:id="@+id/ramBar"
                 style="@style/WidgetMeterBar" />
 
-            <LinearLayout
-                style="@style/WidgetMeterRow"
-                android:layout_marginTop="10dp">
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <LinearLayout style="@style/WidgetMeterRow">
 
                 <ImageView
                     android:id="@+id/storageIcon"
@@ -120,9 +144,10 @@
     </com.gathin.tvhome.WidgetCard>
 
     <com.gathin.tvhome.WidgetCard
-        android:id="@+id/widgetNowPlaying"
+        android:id="@+id/widgetAir"
         android:layout_width="0dp"
-        android:layout_height="match_parent">
+        android:layout_height="@dimen/widget_card_height"
+        android:layout_gravity="center_vertical">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -131,9 +156,9 @@
             android:padding="16dp">
 
             <TextView
-                android:id="@+id/nowPlayingApp"
+                android:id="@+id/airLabel"
                 style="@style/WidgetLabel"
-                android:text="@string/now_playing" />
+                android:text="@string/air_quality" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -142,42 +167,30 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <ImageView
-                    android:id="@+id/nowPlayingArt"
-                    android:layout_width="52dp"
-                    android:layout_height="52dp"
-                    android:scaleType="centerCrop" />
-
-                <LinearLayout
+                <TextView
+                    android:id="@+id/airValue"
+                    style="@style/WidgetValue"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
                     android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:text="–" />
 
-                    <TextView
-                        android:id="@+id/nowPlayingTitle"
-                        style="@style/WidgetTitle" />
-
-                    <TextView
-                        android:id="@+id/nowPlayingSubtitle"
-                        style="@style/WidgetDetail" />
-                </LinearLayout>
-
-                <ImageView
-                    android:id="@+id/nowPlayingToggle"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:layout_marginStart="8dp"
-                    android:src="@drawable/ic_play" />
+                <com.gathin.tvhome.ShapeBadge
+                    android:id="@+id/airBadge"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp" />
             </LinearLayout>
+
+            <TextView
+                android:id="@+id/airDetail"
+                style="@style/WidgetDetail" />
         </LinearLayout>
     </com.gathin.tvhome.WidgetCard>
 
     <com.gathin.tvhome.WidgetCard
         android:id="@+id/widgetCalendar"
         android:layout_width="0dp"
-        android:layout_height="match_parent">
+        android:layout_height="@dimen/widget_card_height"
+        android:layout_gravity="center_vertical">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -207,7 +220,8 @@
     <com.gathin.tvhome.WidgetCard
         android:id="@+id/widgetAdd"
         android:layout_width="0dp"
-        android:layout_height="match_parent"
+        android:layout_height="@dimen/widget_card_height"
+        android:layout_gravity="center_vertical"
         android:visibility="gone">
 
         <LinearLayout

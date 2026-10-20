@@ -25,6 +25,13 @@ public final class ShapeBadge extends View {
         icon = context.getDrawable(R.drawable.ic_home_settings);
     }
 
+    /** Colours of its own (the air quality band) instead of the scheme's primaryContainer. */
+    void setColors(int fill, int icon) {
+        this.fill.setColor(fill);
+        iconColor = icon;
+        invalidate();
+    }
+
     void setIcon(Drawable d) {
         icon = d;
         invalidate();

@@ -13,7 +13,8 @@ import java.util.Map;
  * remote send KEYCODE_TV for it, others (KTC and Kalley Realtek Google TV remotes) KEYCODE_TV_INPUT; on Google TV
  * the stock launcher handles both, so with the stock launcher disabled the button does nothing. Buttons listed in
  * input_key_keycodes (config.xml or a theme) open the input switcher the same way, and app_keys start an app (a
- * YouTube button that only the stock launcher answered). Every other key passes through untouched.
+ * YouTube button that only the stock launcher answered), and running_apps_keycodes open the running apps panel.
+ * Every other key passes through untouched.
  * Opt-in: INPUT_KEY_SERVICE=1 build-and-install.sh (or -InputKeyService on Windows) enables it.
  */
 public class InputKeyService extends AccessibilityService {
@@ -22,6 +23,7 @@ public class InputKeyService extends AccessibilityService {
 
     private int[] inputKeycodes = new int[0];
     private Map<Integer, String> appKeys = Collections.emptyMap();
+    private int[] runningAppsKeycodes = new int[0];
 
     @Override
     protected void onServiceConnected() {
@@ -30,6 +32,12 @@ public class InputKeyService extends AccessibilityService {
         Config config = Config.load(this);
         inputKeycodes = config.inputKeycodes;
         appKeys = RemoteKeys.parseAppKeys(config.appKeys);
+        runningAppsKeycodes = getResources().getIntArray(R.array.running_apps_keycodes);
+    }
+
+    private boolean isRunningAppsKey(int keyCode) {
+        for (int code : runningAppsKeycodes) if (keyCode == code) return true;
+        return false;
     }
 
     private boolean isInputKey(int keyCode) {
@@ -40,6 +48,12 @@ public class InputKeyService extends AccessibilityService {
 
     @Override
     protected boolean onKeyEvent(KeyEvent event) {
+        if (isRunningAppsKey(event.getKeyCode())) {
+            if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {
+                startActivity(new Intent(this, RunningAppsActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            }
+            return true;
+        }
         String app = appKeys.get(event.getKeyCode());
         if (app == null && !isInputKey(event.getKeyCode())) return false;
         if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {

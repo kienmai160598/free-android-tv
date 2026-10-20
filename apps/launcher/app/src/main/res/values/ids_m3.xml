@@ -8,4 +8,6 @@
     <item name="m3_menu_highlight" type="id" />
     <!-- Text or icon tag: its {rest, focused} colours from the skin, kept after MenuHighlight paints it. -->
     <item name="m3_menu_colors" type="id" />
+    <item name="running_app" type="id" />
+    <item name="running_app_icon" type="id" />
 </resources>

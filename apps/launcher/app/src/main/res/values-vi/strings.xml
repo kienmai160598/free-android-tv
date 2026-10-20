@@ -29,7 +29,6 @@
     <string name="launcher_settings">Cài đặt launcher</string>
     <string name="columns_label">Số ứng dụng mỗi hàng</string>
     <string name="animations_state">Hiệu ứng: %1$s</string>
-    <string name="dark_theme">Giao diện tối</string>
     <string name="advanced_effects">Chuyển động sinh động</string>
     <string name="advanced_effects_state">Hiệu ứng nâng cao: %1$s</string>
     <string name="advanced_effects_warning">Hiệu ứng nảy và phóng to vui mắt hơn. Tắt đi nếu TV bị chậm.</string>
@@ -66,9 +65,6 @@
     <string name="card_state_new_key">Khóa mới</string>
     <string name="card_state_new_label">Tên mới</string>
     <string name="greeting_with_name">%1$s, %2$s</string>
-    <string name="dock_edit">Chỉnh sửa dock</string>
-    <string name="dock_edit_hint">Chọn vị trí trên dock cần đổi rồi nhấn OK. Nhấn Quay lại để kết thúc.</string>
-    <string name="dock_edit_pick_app">Giờ chọn ứng dụng để đặt vào đó rồi nhấn OK. Nhấn Quay lại để chọn vị trí khác.</string>
 
     <!-- Home widgets (WidgetShelf) -->
     <string name="widgets">Tiện ích</string>
@@ -78,9 +74,9 @@
     <string name="widget_storage">Bộ nhớ</string>
     <string name="widget_used_of">%1$s / %2$s</string>
     <string name="lunar_calendar">Âm lịch</string>
-    <string name="lunar_year">Âm lịch · %s</string>
+    <string name="lunar_year">Năm %s</string>
     <string name="lunar_leap">%s (nhuận)</string>
-    <string name="holiday_in_days">%1$s · còn %2$d ngày</string>
+    <string name="holiday_in_days">%1$s, còn %2$d ngày</string>
     <string name="holiday_tomorrow">Mai là %s</string>
     <string name="holiday_today">Hôm nay là %s</string>
     <string name="holiday_new_year">Tết Dương lịch</string>
@@ -98,13 +94,102 @@
     <string name="weather_rain">Mưa</string>
     <string name="weather_snow">Tuyết</string>
     <string name="weather_thunder">Dông</string>
-    <string name="weather_range">%1$s · %2$d° / %3$d°</string>
+    <string name="weather_range">%1$s, %2$d° / %3$d°</string>
+    <string name="weather_feels">Cảm giác như</string>
+    <string name="weather_details">Độ ẩm %1$d%%, gió %2$d km/h</string>
+    <string name="weather_details_mph">Độ ẩm %1$d%%, gió %2$d mph</string>
+    <string name="weather_tomorrow">%s ngày mai</string>
+    <string name="weather_tomorrow_detail">Thấp nhất %1$d°, mưa %2$d%%</string>
     <string name="weather_offline">Không lấy được thời tiết</string>
-    <string name="now_playing">Đang phát</string>
-    <string name="now_playing_idle">Không có gì đang phát</string>
-    <string name="now_playing_permission">Cần quyền đọc thông báo</string>
     <string name="widget_add">Thêm widget</string>
-    <string name="widget_move_left">Chuyển sang trái</string>
-    <string name="widget_move_right">Chuyển sang phải</string>
     <string name="widget_remove">Gỡ widget</string>
+
+    <!-- Edit Home (apps, dock and widgets) -->
+    <string name="edit_home">Chỉnh sửa Home</string>
+    <string name="edit_home_done">Xong chỉnh sửa</string>
+    <string name="edit_home_moving">Đang di chuyển %s</string>
+    <string name="edit_home_hint">OK để nhấc app hoặc widget. Hàng đầu là dock. Back để xong.</string>
+    <string name="edit_home_hint_carrying">Mũi tên để di chuyển, kể cả vào dock. OK để đặt xuống.</string>
+    <string name="edit_home_hint_widget">Trái phải để di chuyển. OK để đặt xuống.</string>
+    <string name="tile_move">Di chuyển</string>
+    <string name="app_info">Thông tin ứng dụng</string>
+    <string name="widget_cpu">CPU</string>
+
+    <!-- Air quality widget -->
+    <string name="air_quality">Không khí</string>
+    <string name="air_tomorrow">%s ngày mai</string>
+    <string name="air_detail">%1$s, PM2.5 %2$d</string>
+    <string name="air_detail_tomorrow">%s lúc tệ nhất</string>
+    <string name="air_offline">Không lấy được chỉ số không khí</string>
+    <string name="aqi_good">Tốt</string>
+    <string name="aqi_moderate">Trung bình</string>
+    <string name="aqi_sensitive">Kém</string>
+    <string name="aqi_unhealthy">Xấu</string>
+    <string name="aqi_very_unhealthy">Rất xấu</string>
+    <string name="aqi_hazardous">Nguy hại</string>
+
+    <!-- Widget settings -->
+    <string name="widget_settings">Cài đặt</string>
+    <string name="setting_location">Vị trí: %s</string>
+    <string name="setting_location_shared">Vị trí (chung với Thời tiết): %s</string>
+    <string name="setting_unit">Đơn vị: %s</string>
+    <string name="setting_countdown">Đếm ngược: %s</string>
+    <string name="countdown_next">Ngày lễ kế tiếp</string>
+    <string name="countdown_tet">Chỉ Tết</string>
+    <string name="setting_cpu">CPU: %s</string>
+    <string name="option_shown">Hiện</string>
+    <string name="option_hidden">Ẩn</string>
+    <string name="widget_city_auto">Tự động (theo IP)</string>
+
+    <!-- Greeting name (Launcher settings) -->
+    <string name="settings_group_home">Màn hình chính</string>
+    <string name="settings_group_you">Cá nhân</string>
+    <string name="settings_group_motion">Chuyển động</string>
+    <string name="settings_group_system">Hệ thống</string>
+    <string name="settings_group_about">Thông tin</string>
+    <string name="about_version">Phiên bản</string>
+    <string name="about_default">Launcher mặc định</string>
+    <string name="about_default_yes">Launcher này</string>
+    <string name="about_default_no">Ứng dụng khác. Chọn để đổi.</string>
+    <string name="about_stock">Màn hình chính gốc của Google TV</string>
+    <string name="about_stock_off">Đã tắt</string>
+    <string name="about_stock_on">Đang bật</string>
+    <string name="about_stock_none">Không có trên TV này</string>
+    <string name="your_name">Tên của bạn</string>
+    <string name="your_name_none">Chưa đặt</string>
+    <string name="save">Lưu</string>
+
+    <!-- Wi-Fi menu (hold OK on the Wi-Fi pill) -->
+    <string name="wifi_change">Đổi mạng</string>
+    <string name="signal_weak">Sóng yếu</string>
+
+    <!-- Wi-Fi pill and speed test -->
+    <string name="wifi_label_detail">%1$s (%2$s)</string>
+    <string name="wifi_no_internet">Không có Internet</string>
+    <string name="speed_test">Đo tốc độ</string>
+    <string name="speed_starting">Đang bắt đầu</string>
+    <string name="speed_measuring">Đang đo: %d Mbps</string>
+    <string name="speed_result">%1$d Mbps, %2$s, ping %3$d ms</string>
+    <string name="speed_failed">Không đo được tốc độ</string>
+    <string name="speed_4k">đủ xem 4K</string>
+    <string name="speed_hd">đủ xem HD</string>
+    <string name="speed_sd">chỉ đủ SD</string>
+    <string name="speed_slow">quá chậm để xem phim</string>
+
+    <!-- Running apps panel -->
+    <string name="running_apps">Ứng dụng đang chạy</string>
+    <string name="running_connecting">Đang kết nối với TV</string>
+    <string name="running_allow">Nếu TV hỏi cho phép gỡ lỗi, tick Luôn cho phép rồi chọn Cho phép</string>
+    <string name="running_off">ADB qua mạng đang tắt. Chạy adb tcpip 5555 từ máy tính rồi thử lại.</string>
+    <string name="running_denied">TV chưa cho phép. Thử lại rồi chọn Cho phép.</string>
+    <string name="running_failed">Không đọc được danh sách ứng dụng</string>
+    <string name="running_none">Không có ứng dụng nào chạy ngầm</string>
+    <plurals name="running_count">
+        <item quantity="other">%d ứng dụng</item>
+    </plurals>
+    <string name="running_summary">%1$s, đang dùng %2$s</string>
+    <string name="running_hint">OK để mở, giữ OK để dừng</string>
+    <string name="running_on_screen">Đang xem, %s</string>
+    <string name="running_stop_all">Dừng tất cả</string>
+    <string name="try_again">Thử lại</string>
 </resources>

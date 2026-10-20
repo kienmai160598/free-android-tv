@@ -12,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.ImageView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -27,7 +28,8 @@ import java.util.List;
  * stiffer spring than the trailing one, so the pill stretches along the move and settles back to the
  * row's height. Drawn as the menu panel's background, under the rows, with the panel's own fill.
  * A row's text and icons take the focused colour in proportion to how much of the row the pill
- * covers, so they change with the pill instead of switching ahead of it.
+ * covers, so they change with the pill instead of switching ahead of it. In a menu taller than the
+ * screen the rows scroll: the pill then sticks to the focused row as the list scrolls under it.
  */
 final class MenuHighlight extends Drawable {
 
@@ -101,6 +103,8 @@ final class MenuHighlight extends Drawable {
         panel.setTag(R.id.m3_menu_highlight, h);
         panel.setBackground(h);
         panel.getViewTreeObserver().addOnGlobalFocusChangeListener(h.focusListener);
+        ScrollView scroll = findScroll(panel);
+        if (scroll != null) scroll.setOnScrollChangeListener((v, x, y, oldX, oldY) -> h.followScroll());
         panel.post(() -> h.moveTo(panel.findFocus()));
     }
 
@@ -120,6 +124,35 @@ final class MenuHighlight extends Drawable {
         bottomSpring = TRAIL.reduced(reducedMotion).apply(new SpringAnimation(this, BOTTOM));
         topSpring.setMinimumVisibleChange(0.5f);
         bottomSpring.setMinimumVisibleChange(0.5f);
+    }
+
+    private static ScrollView findScroll(View v) {
+        if (v instanceof ScrollView) return (ScrollView) v;
+        if (v instanceof ViewGroup) {
+            ViewGroup g = (ViewGroup) v;
+            for (int i = 0; i < g.getChildCount(); i++) {
+                ScrollView s = findScroll(g.getChildAt(i));
+                if (s != null) return s;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * The rows scrolled (focus moved past the visible part): the springs aimed where the row was, so
+     * put the pill straight onto where the focused row is now.
+     */
+    private void followScroll() {
+        if (!shown) return;
+        View row = rowOf(panel.findFocus());
+        if (row == null) return;
+        topSpring.cancel();
+        bottomSpring.cancel();
+        rowRect.set(0, 0, row.getWidth(), row.getHeight());
+        panel.offsetDescendantRectToMyCoords(row, rowRect);
+        top = rowRect.top;
+        bottom = rowRect.bottom;
+        moved();
     }
 
     /** A re-skin replaced this highlight: stop following focus and stop moving. */
