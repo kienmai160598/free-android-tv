@@ -9,6 +9,7 @@ Fork of Gathin23/cleanyourtv (MIT).
 |---|---|---|
 | `apps/tvctl/` | Go CLI: ADB client, disable/restore, launcher install, themes | `apps/tvctl/AGENTS.md` |
 | `apps/launcher/` | km-launcher, Java/Gradle, package `com.gathin.tvhome` | `apps/launcher/AGENTS.md` |
+| `packages/contract/` | `contract.json`: names, theme layout and config keys shared by Go and Java; `make generate` writes `apps/tvctl/internal/contract/contract_gen.go` and `Contract.java` | |
 | `packages/debloat-lists/` | One folder per TV model, `debloat.txt` + index | its `README.md` |
 | `packages/themes/` | `config.json` overlays pushed with `tvctl theme` | its `README.md` |
 | `scripts/tvctl` | Builds `apps/tvctl/bin/tvctl` on first use, then runs it | |
@@ -45,5 +46,8 @@ Build env (macOS): `JAVA_HOME=/opt/homebrew/opt/openjdk@17`,
 - A package name reaches a TV shell only after matching `^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$`.
 - Never disable the app that owns Home before another launcher owns it; never disable setupwraith
   while it owns the saved Wi-Fi network (`dumpsys wifi | grep -o 'cname=[^ ]*'`).
+- Anything both apps must agree on (package and component names, theme file layout, config keys,
+  their types and ranges) lives only in `packages/contract/contract.json`. Edit it, run
+  `make generate`, never edit the generated files; CI fails when they drift.
 - Manifest component names in `com.gathin.tvhome` are stored on TVs; never rename or move them.
 - `local/` (gitignored) holds notes about the owner's own TV; never commit it.

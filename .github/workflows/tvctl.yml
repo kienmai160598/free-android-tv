@@ -21,7 +21,13 @@ jobs:
       - uses: ./.github/actions/setup-go
 
       - name: Go format
-        run: test -z "$(gofmt -l .)"
+        run: test -z "$(gofmt -l .)" && test -z "$(gofmt -l ../../packages/contract)"
+
+      - name: Generated contract matches contract.json
+        working-directory: packages/contract
+        run: |
+          go run ./cmd/generate
+          git diff --exit-code -- ../../apps/tvctl/internal/contract ../../apps/launcher/app/src/main/java/com/gathin/tvhome/Contract.java
 
       - run: go vet ./... && go test ./...
 

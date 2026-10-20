@@ -11,3 +11,4 @@ tvctl:
 launcher:
   - *shared
   - apps/launcher/**
+  - packages/contract/**

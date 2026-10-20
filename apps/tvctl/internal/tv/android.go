@@ -4,13 +4,15 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/contract"
 )
 
 const (
 	HomeQuery        = "cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME"
 	HomeClaimsQuery  = "cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME"
-	Launcher         = "com.gathin.tvhome"
-	LauncherActivity = Launcher + "/.MainActivity"
+	Launcher         = contract.LauncherPackage
+	LauncherActivity = Launcher + "/" + contract.MainActivity
 	StockLauncher    = "com.google.android.tvlauncher"
 	SetupWizard      = "com.google.android.tungsten.setupwraith"
 )

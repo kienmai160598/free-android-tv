@@ -3,7 +3,6 @@ package theme
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -12,18 +11,20 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/contract"
 	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/tv"
 )
 
 const (
-	dir              = "/sdcard/Android/data/" + tv.Launcher + "/files"
-	remoteConfig     = dir + "/config.json"
-	remoteWallpaper  = dir + "/wallpaper.jpg"
-	remoteWallpapers = dir + "/wallpapers"
+	dir              = contract.ThemeDirectory
+	remoteConfig     = dir + "/" + contract.ThemeConfigFile
+	remoteWallpaper  = dir + "/" + contract.ThemeWallpaperFile
+	remoteWallpapers = dir + "/" + contract.ThemeWallpapersDirectory
+	remoteRevision   = dir + "/" + contract.ThemeRevisionFile
 )
 
 var (
-	imageExtensions   = []string{".jpg", ".jpeg", ".png", ".webp"}
+	imageExtensions   = contract.ThemeImageExtensions
 	safeWallpaperName = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
 )
 
@@ -39,7 +40,7 @@ type theme struct {
 }
 
 func Apply(dev tv.Device, folder string, out io.Writer) error {
-	t, err := loadTheme(folder)
+	t, err := loadTheme(folder, out)
 	if err != nil {
 		return err
 	}
@@ -71,20 +72,34 @@ func Reset(dev tv.Device, out io.Writer) error {
 	return nil
 }
 
-func loadTheme(folder string) (*theme, error) {
-	t := &theme{folder: folder, config: filepath.Join(folder, "config.json")}
+func loadTheme(folder string, out io.Writer) (*theme, error) {
+	t := &theme{folder: folder, config: filepath.Join(folder, contract.ThemeConfigFile)}
 	data, err := os.ReadFile(t.config)
 	if err != nil {
-		return nil, fmt.Errorf("no config.json in %s", folder)
+		return nil, fmt.Errorf("no %s in %s", contract.ThemeConfigFile, folder)
 	}
-	if !json.Valid(data) {
-		return nil, fmt.Errorf("%s is not valid JSON", t.config)
+	if err := reportConfig(t.config, data, out); err != nil {
+		return nil, err
 	}
-	if wallpaper := filepath.Join(folder, "wallpaper.jpg"); isFile(wallpaper) {
+	if wallpaper := filepath.Join(folder, contract.ThemeWallpaperFile); isFile(wallpaper) {
 		t.wallpaper = wallpaper
 	}
 	t.wallpapers, err = wallpaperFiles(folder)
 	return t, err
+}
+
+func reportConfig(path string, data []byte, out io.Writer) error {
+	report, err := checkConfig(data)
+	if err != nil {
+		return fmt.Errorf("%s %v", path, err)
+	}
+	if len(report.unknown) > 0 {
+		fmt.Fprintf(out, "%s: the launcher ignores unknown keys: %s\n", path, strings.Join(report.unknown, ", "))
+	}
+	if len(report.problems) > 0 {
+		return fmt.Errorf("%s has values the launcher would ignore:\n  %s", path, strings.Join(report.problems, "\n  "))
+	}
+	return nil
 }
 
 func (t *theme) push(dev tv.Device) error {
@@ -117,7 +132,7 @@ func (t *theme) pushWallpaper(dev tv.Device) error {
 }
 
 func wallpaperFiles(folder string) ([]string, error) {
-	entries, err := os.ReadDir(filepath.Join(folder, "wallpapers"))
+	entries, err := os.ReadDir(filepath.Join(folder, contract.ThemeWallpapersDirectory))
 	if os.IsNotExist(err) {
 		return nil, nil
 	}
@@ -132,7 +147,13 @@ func wallpaperFiles(folder string) ([]string, error) {
 		if !safeWallpaperName.MatchString(entry.Name()) {
 			return nil, fmt.Errorf("unsupported wallpaper filename: %s", entry.Name())
 		}
-		images = append(images, filepath.Join(folder, "wallpapers", entry.Name()))
+		if info, err := entry.Info(); err == nil && info.Size() > contract.ThemeMaxWallpaperBytes {
+			return nil, fmt.Errorf("%s is over %d MB; the launcher skips it", entry.Name(), contract.ThemeMaxWallpaperBytes>>20)
+		}
+		images = append(images, filepath.Join(folder, contract.ThemeWallpapersDirectory, entry.Name()))
+	}
+	if len(images) > contract.ThemeMaxWallpapers {
+		return nil, fmt.Errorf("%d wallpapers; the launcher reads at most %d", len(images), contract.ThemeMaxWallpapers)
 	}
 	return images, nil
 }
@@ -148,7 +169,7 @@ func clearWallpapers() string {
 func markRevision() string {
 	random := make([]byte, 16)
 	rand.Read(random)
-	return fmt.Sprintf("printf '%%s' '%s' > %s/theme_revision", hex.EncodeToString(random), dir)
+	return fmt.Sprintf("printf '%%s' '%s' > %s", hex.EncodeToString(random), remoteRevision)
 }
 
 func isFile(path string) bool {

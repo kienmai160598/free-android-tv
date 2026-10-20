@@ -16,14 +16,20 @@ final class WallpaperRotation {
         Arrays.sort(entries, Comparator.comparing(File::getName));
         for (File entry : entries) {
             String name = entry.getName().toLowerCase(Locale.ROOT);
-            if (entry.isFile() && entry.length() > 0 && entry.length() <= 10 * 1024 * 1024
-                    && (name.endsWith(".jpg") || name.endsWith(".jpeg")
-                    || name.endsWith(".png") || name.endsWith(".webp"))) {
+            if (entry.isFile() && entry.length() > 0 && entry.length() <= Contract.Theme.MAX_WALLPAPER_BYTES
+                    && hasImageExtension(name)) {
                 result.add(entry);
-                if (result.size() == 100) break;
+                if (result.size() == Contract.Theme.MAX_WALLPAPERS) break;
             }
         }
         return result;
+    }
+
+    private static boolean hasImageExtension(String name) {
+        for (String extension : Contract.Theme.IMAGE_EXTENSIONS) {
+            if (name.endsWith(extension)) return true;
+        }
+        return false;
     }
 
     static File find(List<File> images, String name) {

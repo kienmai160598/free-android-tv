@@ -10,7 +10,8 @@ Go 1.22, standard library only. Module `github.com/kienmai160598/free-android-tv
 | `internal/tv/tvtest` | In-memory `Fake` device for tests |
 | `internal/debloat` | List parsing, guards, recovery record, restore commands |
 | `internal/launcher` | Install and Home handover with rollback |
-| `internal/theme` | Push a theme folder, restart Home keeping accessibility services |
+| `internal/contract` | Generated from `packages/contract/contract.json` (`make generate`); never edit |
+| `internal/theme` | Validate `config.json` against the contract keys, push a theme folder, restart Home keeping accessibility services |
 | `internal/netcheck` | Is port 5555 closed |
 
 ## Invariants

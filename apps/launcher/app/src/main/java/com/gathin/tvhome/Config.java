@@ -29,10 +29,10 @@ import java.util.List;
  */
 final class Config {
     private static final String TAG = "TvHome.Config";
-    static final String FILE_NAME = "config.json";
-    static final String WALLPAPER_NAME = "wallpaper.jpg";
+    static final String FILE_NAME = Contract.Theme.CONFIG_FILE;
+    static final String WALLPAPER_NAME = Contract.Theme.WALLPAPER_FILE;
     static final String SETTINGS_NAME = "launcher_settings";
-    private static final String THEME_REVISION_NAME = "theme_revision";
+    private static final String THEME_REVISION_NAME = Contract.Theme.REVISION_FILE;
     private static final String THEME_SIGNATURE_KEY = "theme_signature";
 
     final List<String> dockApps;
@@ -180,59 +180,59 @@ final class Config {
         JSONObject json = read(file);
         if (json != null) {
             applied = true;
-            dock = stringList(json, "dock_apps", dock);
-            fillDock = bool(json, "fill_dock", fillDock);
-            hidden = stringList(json, "hidden_apps", hidden);
-            liveTv = string(json, "live_tv_package", liveTv);
-            liveTvAction = string(json, "live_tv_action", liveTvAction);
-            panelService = string(json, "source_panel_service", panelService);
-            panelAction = string(json, "source_panel_action", panelAction);
-            inputAction = string(json, "input_action", inputAction);
-            columns = integer(json, "columns", columns, 1, 8);
-            rowsBelow = integer(json, "rows_below_dock", rowsBelow, 0, 3);
-            animations = bool(json, "animations", animations);
-            advancedEffects = bool(json, "advanced_effects", advancedEffects);
-            shamsi = bool(json, "shamsi_date", shamsi);
-            greetingName = string(json, "greeting_name", greetingName).trim();
-            moduleCards = bool(json, "module_cards", moduleCards);
-            reducedMotion = bool(json, "reduced_motion", reducedMotion);
-            dockTitle = bool(json, "dock_title", dockTitle);
-            dockRow = bool(json, "dock_row", dockRow);
-            reorderButton = bool(json, "reorder_button", reorderButton);
-            vpn = string(json, "vpn_app", vpn);
-            homeSettings = bool(json, "show_home_settings_shortcut", homeSettings);
-            showStats = bool(json, "show_stats", showStats);
-            library = bool(json, "app_library", library);
-            background = color(json, "background_color", background);
-            skyIntensity = integer(json, "sky_intensity", skyIntensity, 0, 100);
-            settingsKeycodes = intArray(json, "settings_key_keycodes", settingsKeycodes);
-            settingsKeyPanel = bool(json, "settings_key_panel", settingsKeyPanel);
-            inputKeycodes = intArray(json, "input_key_keycodes", inputKeycodes);
-            appKeys = stringList(json, "app_keys", appKeys);
+            dock = stringList(json, Contract.Key.DOCK_APPS, dock);
+            fillDock = bool(json, Contract.Key.FILL_DOCK, fillDock);
+            hidden = stringList(json, Contract.Key.HIDDEN_APPS, hidden);
+            liveTv = string(json, Contract.Key.LIVE_TV_PACKAGE, liveTv);
+            liveTvAction = string(json, Contract.Key.LIVE_TV_ACTION, liveTvAction);
+            panelService = string(json, Contract.Key.SOURCE_PANEL_SERVICE, panelService);
+            panelAction = string(json, Contract.Key.SOURCE_PANEL_ACTION, panelAction);
+            inputAction = string(json, Contract.Key.INPUT_ACTION, inputAction);
+            columns = integer(json, Contract.Key.COLUMNS, columns, Contract.Range.COLUMNS_MIN, Contract.Range.COLUMNS_MAX);
+            rowsBelow = integer(json, Contract.Key.ROWS_BELOW_DOCK, rowsBelow, Contract.Range.ROWS_BELOW_DOCK_MIN, Contract.Range.ROWS_BELOW_DOCK_MAX);
+            animations = bool(json, Contract.Key.ANIMATIONS, animations);
+            advancedEffects = bool(json, Contract.Key.ADVANCED_EFFECTS, advancedEffects);
+            shamsi = bool(json, Contract.Key.SHAMSI_DATE, shamsi);
+            greetingName = string(json, Contract.Key.GREETING_NAME, greetingName).trim();
+            moduleCards = bool(json, Contract.Key.MODULE_CARDS, moduleCards);
+            reducedMotion = bool(json, Contract.Key.REDUCED_MOTION, reducedMotion);
+            dockTitle = bool(json, Contract.Key.DOCK_TITLE, dockTitle);
+            dockRow = bool(json, Contract.Key.DOCK_ROW, dockRow);
+            reorderButton = bool(json, Contract.Key.REORDER_BUTTON, reorderButton);
+            vpn = string(json, Contract.Key.VPN_APP, vpn);
+            homeSettings = bool(json, Contract.Key.SHOW_HOME_SETTINGS_SHORTCUT, homeSettings);
+            showStats = bool(json, Contract.Key.SHOW_STATS, showStats);
+            library = bool(json, Contract.Key.APP_LIBRARY, library);
+            background = color(json, Contract.Key.BACKGROUND_COLOR, background);
+            skyIntensity = integer(json, Contract.Key.SKY_INTENSITY, skyIntensity, Contract.Range.SKY_INTENSITY_MIN, Contract.Range.SKY_INTENSITY_MAX);
+            settingsKeycodes = intArray(json, Contract.Key.SETTINGS_KEY_KEYCODES, settingsKeycodes);
+            settingsKeyPanel = bool(json, Contract.Key.SETTINGS_KEY_PANEL, settingsKeyPanel);
+            inputKeycodes = intArray(json, Contract.Key.INPUT_KEY_KEYCODES, inputKeycodes);
+            appKeys = stringList(json, Contract.Key.APP_KEYS, appKeys);
         }
         // A theme push or reset invalidates choices made on the TV. On first use, remember the
         // current theme without clearing choices from an older launcher version.
         SharedPreferences choices = ctx.getSharedPreferences(SETTINGS_NAME, Context.MODE_PRIVATE);
         syncThemeChoices(choices, dir, file);
-        int chosenColumns = choices.getInt("columns", columns);
+        int chosenColumns = choices.getInt(Contract.Key.COLUMNS, columns);
         if (chosenColumns >= 4 && chosenColumns <= 7) columns = chosenColumns;
-        animations = choices.getBoolean("animations", animations);
-        advancedEffects = choices.getBoolean("advanced_effects", advancedEffects);
+        animations = choices.getBoolean(Contract.Key.ANIMATIONS, animations);
+        advancedEffects = choices.getBoolean(Contract.Key.ADVANCED_EFFECTS, advancedEffects);
         File wallpaper = dir != null ? new File(dir, WALLPAPER_NAME) : null;
         if (wallpaper != null && !(wallpaper.isFile() && wallpaper.length() > 0)) wallpaper = null;
         // A theme can also switch the wallpaper off while the file is still there.
-        boolean wallpaperEnabled = json == null || bool(json, "wallpaper", true);
+        boolean wallpaperEnabled = json == null || bool(json, Contract.Key.WALLPAPER, true);
         if (!wallpaperEnabled) wallpaper = null;
-        int rotationMinutes = json == null ? 0 : integer(json, "wallpaper_rotation_minutes", 0, 0, 1440);
-        int wallpaperDim = json == null ? 0 : integer(json, "wallpaper_dim", 0, 0, 90);
+        int rotationMinutes = json == null ? 0 : integer(json, Contract.Key.WALLPAPER_ROTATION_MINUTES, 0, Contract.Range.WALLPAPER_ROTATION_MINUTES_MIN, Contract.Range.WALLPAPER_ROTATION_MINUTES_MAX);
+        int wallpaperDim = json == null ? 0 : integer(json, Contract.Key.WALLPAPER_DIM, 0, Contract.Range.WALLPAPER_DIM_MIN, Contract.Range.WALLPAPER_DIM_MAX);
         List<File> wallpapers = new ArrayList<>();
         if (rotationMinutes > 0 && dir != null && wallpaperEnabled) {
-            wallpapers.addAll(WallpaperRotation.images(new File(dir, "wallpapers")));
+            wallpapers.addAll(WallpaperRotation.images(new File(dir, Contract.Theme.WALLPAPERS_DIRECTORY)));
         }
         if (wallpapers.isEmpty() && wallpaper != null) wallpapers.add(wallpaper);
         // A festive skin comes only from a theme; config.xml has no festival.
-        Festival festival = json == null ? Festival.NONE : Festival.parse(string(json, "festival", ""),
-                string(json, "festival_until", ""), string(json, "greeting", ""), string(json, "accent_color", ""));
+        Festival festival = json == null ? Festival.NONE : Festival.parse(string(json, Contract.Key.FESTIVAL, ""),
+                string(json, Contract.Key.FESTIVAL_UNTIL, ""), string(json, Contract.Key.GREETING, ""), string(json, Contract.Key.ACCENT_COLOR, ""));
 
         return new Config(dock, fillDock, hidden, liveTv, liveTvAction, panelService, panelAction, inputAction,
                 Math.max(1, columns), Math.max(0, rowsBelow), animations, advancedEffects,
@@ -251,11 +251,11 @@ final class Config {
             // Existing preferences survive an app upgrade, unless the first launch follows an
             // explicit theme push or reset by the updated tools.
             SharedPreferences.Editor editor = choices.edit();
-            if (!"absent".equals(token)) editor.remove("columns").remove("animations")
-                    .remove("advanced_effects");
+            if (!"absent".equals(token)) editor.remove(Contract.Key.COLUMNS).remove(Contract.Key.ANIMATIONS)
+                    .remove(Contract.Key.ADVANCED_EFFECTS);
             editor.putString(THEME_SIGNATURE_KEY, signature).commit();
         } else if (!seen.equals(signature)) {
-            choices.edit().remove("columns").remove("animations").remove("advanced_effects")
+            choices.edit().remove(Contract.Key.COLUMNS).remove(Contract.Key.ANIMATIONS).remove(Contract.Key.ADVANCED_EFFECTS)
                     .putString(THEME_SIGNATURE_KEY, signature).commit();
         }
     }
@@ -278,7 +278,7 @@ final class Config {
     /** Reads and parses the overlay; any problem means "no overlay", never a crash on the home screen. */
     private static JSONObject read(File file) {
         if (file == null || !file.isFile()) return null;
-        if (file.length() > 64 * 1024) {
+        if (file.length() > Contract.Theme.MAX_CONFIG_BYTES) {
             Log.w(TAG, "ignoring " + file + ": larger than 64 KB");
             return null;
         }

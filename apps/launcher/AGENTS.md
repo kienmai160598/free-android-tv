@@ -30,6 +30,10 @@ Locales: English and Vietnamese only.
 
 ## Config keys (`config.xml`, or a theme's `config.json`)
 
+Defined in `packages/contract/contract.json` (types, ranges) and read through the generated
+`Contract.java`; `tvctl theme` validates a theme against the same definitions. A new key: add it to
+the contract, `make generate`, read it in `Config` with `Contract.Key.*`.
+
 Unknown or mistyped theme keys are ignored; a theme that does not parse is ignored whole.
 
 | Key | Meaning |
