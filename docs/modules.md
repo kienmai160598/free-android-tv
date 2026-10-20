@@ -69,7 +69,7 @@ adb install -r app/build/outputs/apk/release/km-launcher.apk
 adb shell input keyevent KEYCODE_HOME
 ```
 
-(This repo's `tools/tvctl` works where the `adb` binary is blocked; see the README.)
+(This repo's `scripts/tvctl` works where the `adb` binary is blocked; see the README.)
 
 Useful checks:
 

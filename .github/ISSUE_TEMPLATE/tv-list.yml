@@ -1,17 +1,17 @@
 name: My TV
-description: A TV that is not in examples/ yet, or a list that needs a change
+description: A TV that is not in packages/debloat-lists/ yet, or a list that needs a change
 title: "[TV] Brand Model (Android version)"
 labels: [tv-list]
 body:
   - type: markdown
     attributes:
       value: |
-        Lists people have tested live in [`examples/`](../tree/main/examples). If you already have a working list, a pull request is even better: see [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md).
+        Lists people have tested live in [`packages/debloat-lists/`](../tree/main/examples). If you already have a working list, a pull request is even better: see [docs/contributing.md](../blob/main/CONTRIBUTING.md).
   - type: input
     id: model
     attributes:
       label: TV model
-      description: "`tools/tvctl probe` prints the model, device codename, Android version and build."
+      description: "`scripts/tvctl probe` prints the model, device codename, Android version and build."
       placeholder: Sony BRAVIA KD-55X8509C (SVP-DTV15)
     validations:
       required: true
@@ -45,4 +45,4 @@ body:
     id: screenshot
     attributes:
       label: Screenshot
-      description: "Optional. `tools/tvctl shell 'screencap -p /sdcard/s.png'` then `tools/tvctl pull /sdcard/s.png s.png`, and drop the file here."
+      description: "Optional. `scripts/tvctl shell 'screencap -p /sdcard/s.png'` then `scripts/tvctl pull /sdcard/s.png s.png`, and drop the file here."

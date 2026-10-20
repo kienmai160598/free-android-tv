@@ -1,18 +1,18 @@
 # Troubleshooting
 
-Things that bit us or contributors, so they don't bite you. Commands use `tools/tvctl`; see the
+Things that bit us or contributors, so they don't bite you. Commands use `scripts/tvctl`; see the
 [README](../README.md#tvctl) for setting it up.
 
 ## Connecting
 
 - **macOS: `adb connect` says "No route to host"** although the port is open. Recent macOS treats
   the Google-signed `adb` as its own app under Local Network privacy and silently blocks it.
-  `tools/tvctl` avoids the binary entirely.
+  `scripts/tvctl` avoids the binary entirely.
 - **No "wireless debugging" toggle** on some TVs, Xiaomi among them. USB debugging alone opens
   network ADB on port 5555.
 - **USB debugging is greyed out and there is no Wireless debugging entry either**, seen on a carrier
   box ([Airtel Xstream, Android 11](https://github.com/Gathin23/cleanyourtv/issues/227)). Some ISP
-  firmware removes both switches, and then no shell can be reached: `tools/tvctl` fails,
+  firmware removes both switches, and then no shell can be reached: `scripts/tvctl` fails,
   `adb connect <ip>:5555` times out, and so does a port check. That timeout is the firmware, not
   Wi-Fi, the router or the cable, so don't go rebuilding the network for it. Greyed-out rather than
   missing points at a device-owner policy or a provisioning lock; the toggle comes back after a
@@ -20,7 +20,7 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   to talk to.
 - **USB debugging never opens port 5555** on some Google TV sets (a Skyworth-built Philips among
   them). Pair once through Wireless debugging with the stock `adb` (`adb pair <ip>:<port> <code>`,
-  then `adb connect`), run `adb tcpip 5555`, and `tools/tvctl` works from then on. `dns-sd -B
+  then `adb connect`), run `adb tcpip 5555`, and `scripts/tvctl` works from then on. `dns-sd -B
   _adb-tls-pairing._tcp` (or `adb mdns services`) shows the pairing port while the code is on screen.
   Android switches Wireless debugging off whenever Wi-Fi drops; turn it back on and `adb` reconnects
   without a new code. Port 5555 from `adb tcpip` usually lasts only until the next reboot.
@@ -28,7 +28,7 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   switches the USB port to ADB device mode, which cuts the power to a USB speaker or drive. Switch
   USB debugging off when you're done; the launcher doesn't need it.
 - **Close port 5555 when you're done**: plaintext, and a shell for anyone on the LAN when `ro.adb.secure=0`. Steps in the README FAQ.
-- **The TV sits on a separate VLAN or IoT network** and `tools/tvctl` times out although debugging
+- **The TV sits on a separate VLAN or IoT network** and `scripts/tvctl` times out although debugging
   is on: the router keeps the computer from reaching it. Add a temporary firewall rule from your
   computer to the TV on tcp/5555 only, and remove it again when you close ADB. Opening the whole
   segment, or moving the TV onto the main network for good, undoes the reason it was separate.
@@ -39,7 +39,7 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   the same key as adb (and `tools/adbkey/adbkey` if an old setup left one there). Every attempt with an unaccepted key queues one more prompt on the TV, so dismiss them all
   (Back) before testing with key presses.
 - **Git Bash rewrites paths** like `/data/local/tmp` into Windows paths before a program sees them.
-  Run `tools/tvctl.ps1` from PowerShell instead, or set `MSYS_NO_PATHCONV=1`. Set `JAVA_HOME` and
+  Run `scripts/tvctl.ps1` from PowerShell instead, or set `MSYS_NO_PATHCONV=1`. Set `JAVA_HOME` and
   `ANDROID_HOME` before building there.
 
 ## Working on the TV
@@ -64,7 +64,7 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   `Success` while HOME still resolves to the stock launcher (priority 2) until that one is disabled.
   And check which packages actually handle HOME before disabling anything by name: on the Sony
   above, `com.google.android.leanbacklauncher` has a boot receiver but no HOME activity.
-  `tools/tvctl disable` now does that check itself: when the list holds the app that owns Home and
+  `scripts/tvctl disable` now does that check itself: when the list holds the app that owns Home and
   nothing else on the TV answers HOME, it skips that entry and says so (`FORCE_HOME=1` overrides),
   so applying a list before the handover no longer leaves the TV without a launcher. Apply the list
   again after the install script has made the new launcher Home to disable the old one.
@@ -77,14 +77,14 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   setupwraith's components is refused with a SecurityException. Disabling the whole
   `com.google.android.tungsten.setupwraith` package is what frees the slot. It is the first-run
   setup wizard, so everyday use is unaffected, but re-enable it before a factory reset - list it in
-  your `debloat.txt` and `tools/tvctl restore` does that for you.
+  your `debloat.txt` and `scripts/tvctl restore` does that for you.
 - **The TV drops off Wi-Fi for good the moment setupwraith is disabled**, seen on Google TV 14 (Sony
   BRAVIA 9 II, Philips R8G, Skyworth SWTV-24NA-4K NF, Xiaomi TV Box S 3rd gen MiTV-AFMU0). A Wi-Fi network saved during the first-run
   wizard belongs to setupwraith, and Android deletes an app's saved networks when the app is disabled.
   The TV is fine but offline, so ADB and the phone remote stop working, and a restart doesn't bring
-  the network back. Check before disabling it: `tools/tvctl shell "dumpsys wifi" | grep -o 'cname=[^ ]*'`.
+  the network back. Check before disabling it: `scripts/tvctl shell "dumpsys wifi" | grep -o 'cname=[^ ]*'`.
   If it names setupwraith, forget the network and join it again in Settings > Network & Internet (it
-  then belongs to `android.uid.system`), or use Ethernet. `tools/tvctl disable` skips setupwraith while it
+  then belongs to `android.uid.system`), or use Ethernet. `scripts/tvctl disable` skips setupwraith while it
   owns the network (`FORCE_SETUPWRAITH=1` overrides). Already offline? Rejoin from the TV with its own
   remote or a USB keyboard, then turn Wireless debugging back on if it was in use.
 - **The TV drops off Wi-Fi every minute right after the install**, seen on Google TV 14 (Xiaomi
@@ -95,25 +95,25 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   above. To confirm it is this bug: `logcat -b crash` shows `FATAL EXCEPTION IN SYSTEM PROCESS:
   android.display`, and the main log shows `setupwraith/.RecoveryActivity` being started every
   200 ms or so. If you're already in the loop:
-  `tools/tvctl shell 'pm enable --user 0 com.google.android.apps.tv.launcherx'`.
+  `scripts/tvctl shell 'pm enable --user 0 com.google.android.apps.tv.launcherx'`.
 - **No on-screen keyboard** after switching launchers, seen on Xiaomi: the default input method
   pointed at a Baidu keyboard that isn't installed. Fix:
-  `tools/tvctl shell 'ime set com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME'`
+  `scripts/tvctl shell 'ime set com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME'`
 - **Third-party launchers** often charge for basics like a custom wallpaper. That's why this repo
   has its own.
 - **Wrong time zone, clock off by 30 or 60 minutes**, seen on Xiaomi in Iran: the TV picked a
   neighbouring zone, and older firmware ships time zone data from before Iran dropped daylight
   saving in 2022 (on Android 10 and newer, check with
-  `tools/tvctl shell 'cat /apex/com.android.tzdata/etc/tz/tz_version'`). Set the zone yourself:
-  `tools/tvctl shell 'settings put global auto_time_zone 0; cmd alarm set-timezone Asia/Tehran'`.
+  `scripts/tvctl shell 'cat /apex/com.android.tzdata/etc/tz/tz_version'`). Set the zone yourself:
+  `scripts/tvctl shell 'settings put global auto_time_zone 0; cmd alarm set-timezone Asia/Tehran'`.
   If the clock then jumps an hour ahead in spring, a fixed offset keeps it right:
-  `tools/tvctl shell 'cmd alarm set-timezone GMT+03:30'`. The same applies to any country whose rules
+  `scripts/tvctl shell 'cmd alarm set-timezone GMT+03:30'`. The same applies to any country whose rules
   changed after the firmware was built.
 - **The network pill says "Wi-Fi" instead of the network name** after `pm clear com.gathin.tvhome`
   or a reinstall from scratch: clearing the launcher's data also drops the location permission
   Android 10 needs to read the SSID. `pm grant com.gathin.tvhome android.permission.ACCESS_FINE_LOCATION`
   (the install script does this).
-- **Home is "Select a Home app"** after `tools/tvctl restore` followed by re-applying a list: disabling a
+- **Home is "Select a Home app"** after `scripts/tvctl restore` followed by re-applying a list: disabling a
   package that also claims HOME (PatchWall on Xiaomi) makes Android drop the default. The install
   script now picks the known stock launcher among the candidates by itself; otherwise choose one on
   the TV or pass `STOCK_LAUNCHER=<package>`.
@@ -125,9 +125,9 @@ them. The installer's `enabled` message means the setting was written, not that 
 Read the state without changing anything:
 
 ```sh
-tools/tvctl shell 'am get-current-user'
-tools/tvctl shell 'settings --user current get secure enabled_accessibility_services'
-tools/tvctl shell 'dumpsys accessibility'
+scripts/tvctl shell 'am get-current-user'
+scripts/tvctl shell 'settings --user current get secure enabled_accessibility_services'
+scripts/tvctl shell 'dumpsys accessibility'
 ```
 
 | Helper | Component in the enabled-services list | Key it filters |

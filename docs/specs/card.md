@@ -181,5 +181,5 @@ W TvHomeCards: io.example.deep: XML nested deeper than 2
 W TvHomeCards: io.example.big: label is longer than 24 characters
 ```
 
-Read them with `adb logcat -s TvHomeCards` (or `tools/tvctl shell 'logcat -d -s TvHomeCards'`). A rejected
+Read them with `adb logcat -s TvHomeCards` (or `scripts/tvctl shell 'logcat -d -s TvHomeCards'`). A rejected
 card has no other effect: the app keeps its ordinary tile.

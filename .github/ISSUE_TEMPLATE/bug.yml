@@ -10,8 +10,8 @@ body:
         - Launcher (the home screen)
         - Install script (build-and-install)
         - Debloat or restore scripts
-        - tools/tvctl (probe, shell, push...)
-        - The prompt (PROMPT.md)
+        - scripts/tvctl (probe, shell, push...)
+        - The prompt (docs/prompt.md)
     validations:
       required: true
   - type: input

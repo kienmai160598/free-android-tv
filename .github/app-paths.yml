@@ -1,14 +1,13 @@
 shared: &shared
   - .github/**
+  - Makefile
 
 tvctl:
   - *shared
-  - go.mod
-  - cmd/**
-  - internal/**
-  - examples/**
-  - themes/**
+  - apps/tvctl/**
+  - packages/**
+  - scripts/**
 
 launcher:
   - *shared
-  - launcher/**
+  - apps/launcher/**

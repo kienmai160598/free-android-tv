@@ -11,6 +11,9 @@ jobs:
   publish:
     name: Publish tvctl
     runs-on: ${{ vars.RUNNER || 'ubuntu-latest' }}
+    defaults:
+      run:
+        working-directory: apps/tvctl
     env:
       CGO_ENABLED: "0"
     steps:

@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ vars.RUNNER || 'ubuntu-latest' }}
     defaults:
       run:
-        working-directory: launcher
+        working-directory: apps/launcher
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-android
@@ -28,7 +28,7 @@ jobs:
     runs-on: ${{ vars.RUNNER || 'ubuntu-latest' }}
     defaults:
       run:
-        working-directory: launcher
+        working-directory: apps/launcher
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-android
@@ -44,6 +44,6 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: km-launcher
-          path: launcher/app/build/outputs/apk/release/km-launcher.apk
+          path: apps/launcher/app/build/outputs/apk/release/km-launcher.apk
           if-no-files-found: error
           retention-days: 7

@@ -3,7 +3,7 @@
 Everything in this repo assumes your computer and the TV are on the same Wi-Fi. When the TV is at a
 parent's or a friend's house, put a private [Tailscale](https://tailscale.com) link between your
 computer and their home. The TV then behaves exactly as if it were on your network: the prompt,
-`tools/tvctl`, screenshots and the launcher install all work unchanged, with a `100.x.y.z` address
+`scripts/tvctl`, screenshots and the launcher install all work unchanged, with a `100.x.y.z` address
 instead of the local one. Tailscale's personal plan is free.
 
 **Never forward port 5555 on their router to the internet.** ADB is full control of the TV, and
@@ -72,7 +72,7 @@ connect from another network.
 Ask them to turn on debugging exactly as in the [Quick start](../README.md#quick-start), then:
 
 ```bash
-TV_HOST=100.x.y.z tools/tvctl probe
+TV_HOST=100.x.y.z scripts/tvctl probe
 ```
 
 They accept "Allow USB debugging?" on the TV while you're on the phone. The rest of the prompt
@@ -88,7 +88,7 @@ With the stock `adb`:
 adb pair 100.x.y.z:<pairing port> <code>
 adb connect 100.x.y.z:<connect port>
 adb -s 100.x.y.z:<connect port> tcpip 5555
-TV_HOST=100.x.y.z tools/tvctl probe
+TV_HOST=100.x.y.z scripts/tvctl probe
 ```
 
 With option B, use the TV's local address instead of `100.x.y.z`.

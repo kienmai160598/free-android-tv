@@ -1,18 +1,14 @@
-tools/bin/
-tools/adbkey/
-launcher/.gradle/
-launcher/build/
-launcher/app/build/
-launcher/local.properties
-# your own TV's dumps (serial, android_id, device names) stay local
-backup/
 .DS_Store
+backup/
+local/
 
-# Generated install bundles and JVM crash reports stay out of contributions.
+apps/tvctl/bin/
+
+apps/launcher/.gradle/
+apps/launcher/build/
+apps/launcher/app/build/
+apps/launcher/local.properties
+apps/launcher/hs_err_pid*.log
+apps/launcher/replay_pid*.log
 *.apk
 *.aab
-launcher/hs_err_pid*.log
-launcher/replay_pid*.log
-
-# Notes about one particular TV (its address, backups, recovery records) stay on this machine.
-local/
