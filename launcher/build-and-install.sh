@@ -8,4 +8,4 @@ export ANDROID_HOME="${ANDROID_HOME:-/opt/homebrew/share/android-commandlinetool
 export PATH="$JAVA_HOME/bin:$PATH"
 [ -f local.properties ] || echo "sdk.dir=$ANDROID_HOME" > local.properties
 ./gradlew assembleRelease -q --console=plain
-exec ../tools/tvctl install "$@" app/build/outputs/apk/release/app-release.apk
+exec ../tools/tvctl install "$@" app/build/outputs/apk/release/km-launcher.apk

@@ -65,7 +65,7 @@ The launcher targets TVs with 1 GB of RAM, and the owners trust what they put on
 Install over ADB, press Home, and the prompt appears:
 
 ```bash
-adb install -r app/build/outputs/apk/release/app-release.apk
+adb install -r app/build/outputs/apk/release/km-launcher.apk
 adb shell input keyevent KEYCODE_HOME
 ```
 
@@ -92,7 +92,7 @@ The owner's answer is pinned to your signing certificate. Publish the certificat
 release so people can check what they install:
 
 ```bash
-apksigner verify -print-certs app-release.apk | grep 'SHA-256'
+apksigner verify -print-certs km-launcher.apk | grep 'SHA-256'
 ```
 
 (`apksigner` accepts its options with one dash as well as two.)

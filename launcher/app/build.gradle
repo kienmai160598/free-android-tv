@@ -27,6 +27,12 @@ android {
         }
     }
 
+    applicationVariants.configureEach { variant ->
+        variant.outputs.configureEach {
+            outputFileName = variant.buildType.name == 'release' ? 'km-launcher.apk' : "km-launcher-${variant.name}.apk"
+        }
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17

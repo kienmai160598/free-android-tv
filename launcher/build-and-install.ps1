@@ -20,5 +20,5 @@ if (-not (Test-Path local.properties)) {
 
 .\gradlew.bat assembleRelease -q --console=plain
 if ($LASTEXITCODE -ne 0) { throw 'Gradle build failed' }
-& (Join-Path $PSScriptRoot '..\tools\tvctl.ps1') install @InstallFlags 'app\build\outputs\apk\release\app-release.apk'
+& (Join-Path $PSScriptRoot '..\tools\tvctl.ps1') install @InstallFlags 'app\build\outputs\apk\release\km-launcher.apk'
 exit $LASTEXITCODE

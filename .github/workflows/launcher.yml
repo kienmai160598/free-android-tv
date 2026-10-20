@@ -37,13 +37,13 @@ jobs:
 
       - name: APK size
         run: |
-          size=$(stat -c %s app/build/outputs/apk/release/app-release.apk)
+          size=$(stat -c %s app/build/outputs/apk/release/km-launcher.apk)
           echo "release APK: $((size / 1024)) KB"
           test "$size" -lt 716800
 
       - uses: actions/upload-artifact@v7
         with:
-          name: launcher-apk
-          path: launcher/app/build/outputs/apk/release/app-release.apk
+          name: km-launcher
+          path: launcher/app/build/outputs/apk/release/km-launcher.apk
           if-no-files-found: error
           retention-days: 7
