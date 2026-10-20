@@ -724,7 +724,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         adapter.setDockSize(columns);
         reloadTiles();
         updateGridPadding(grid.getWidth(), grid.getHeight());
-        grid.swapAdapter(adapter, true);
+        grid.setAdapter(null);
+        grid.getRecycledViewPool().clear();
+        grid.setAdapter(adapter);
         restoreFocus();
     }
 
