@@ -55,7 +55,8 @@ func TestRestoreDryRunNeedsNoTV(t *testing.T) {
 	list := filepath.Join(t.TempDir(), "debloat.txt")
 	os.WriteFile(list, []byte("# TV\ncom.example.one\n"), 0o644)
 	code, out, errOut := tvctl(t, "restore", "--dry-run", list)
-	if code != 0 || !strings.HasPrefix(out, "pm enable com.example.one\n") || !strings.Contains(errOut, "no recovery record") {
+	if code != 0 || !strings.HasPrefix(out, "pm enable com.example.one\n") ||
+		!strings.Contains(errOut, "no recovery record") {
 		t.Errorf("exit %d\n%s\n%s", code, out, errOut)
 	}
 }

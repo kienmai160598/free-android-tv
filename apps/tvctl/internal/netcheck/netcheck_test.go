@@ -13,6 +13,7 @@ func TestOpenPort(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer listener.Close()
+
 	result, message := ADBPort("127.0.0.1", listener.Addr().(*net.TCPAddr).Port)
 	if result != Open || !strings.Contains(message, "still open") {
 		t.Errorf("%v: %s", result, message)
@@ -24,10 +25,12 @@ func TestClosedPort(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	port := listener.Addr().(*net.TCPAddr).Port
 	listener.Close()
 	result, message := ADBPort("127.0.0.1", port)
-	if result != Closed || (runtime.GOOS != "windows" && !strings.Contains(message, "is closed: the TV refused")) {
+	if result != Closed ||
+		(runtime.GOOS != "windows" && !strings.Contains(message, "is closed: the TV refused")) {
 		t.Errorf("%v: %s", result, message)
 	}
 }

@@ -34,53 +34,64 @@ type message struct {
 	data    []byte
 }
 
-func (m message) String() string {
+func (msg message) String() string {
 	name := make([]byte, 4)
-	binary.LittleEndian.PutUint32(name, m.command)
-	return fmt.Sprintf("%s(%#x, %#x, %d bytes)", name, m.arg0, m.arg1, len(m.data))
+	binary.LittleEndian.PutUint32(name, msg.command)
+	return fmt.Sprintf("%s(%#x, %#x, %d bytes)", name, msg.arg0, msg.arg1, len(msg.data))
 }
 
 func checksum(data []byte) uint32 {
 	var sum uint32
-	for _, b := range data {
-		sum += uint32(b)
+	for _, value := range data {
+		sum += uint32(value)
 	}
+
 	return sum
 }
 
-func writeMessage(w io.Writer, m message) error {
-	packet := make([]byte, headerSize+len(m.data))
-	binary.LittleEndian.PutUint32(packet[0:], m.command)
-	binary.LittleEndian.PutUint32(packet[4:], m.arg0)
-	binary.LittleEndian.PutUint32(packet[8:], m.arg1)
-	binary.LittleEndian.PutUint32(packet[12:], uint32(len(m.data)))
-	binary.LittleEndian.PutUint32(packet[16:], checksum(m.data))
-	binary.LittleEndian.PutUint32(packet[20:], m.command^0xffffffff)
-	copy(packet[headerSize:], m.data)
-	_, err := w.Write(packet)
+func writeMessage(writer io.Writer, msg message) error {
+	packet := make([]byte, headerSize+len(msg.data))
+	binary.LittleEndian.PutUint32(packet[0:], msg.command)
+	binary.LittleEndian.PutUint32(packet[4:], msg.arg0)
+	binary.LittleEndian.PutUint32(packet[8:], msg.arg1)
+	binary.LittleEndian.PutUint32(packet[12:], uint32(len(msg.data)))
+	binary.LittleEndian.PutUint32(packet[16:], checksum(msg.data))
+	binary.LittleEndian.PutUint32(packet[20:], msg.command^0xffffffff)
+	copy(packet[headerSize:], msg.data)
+
+	_, err := writer.Write(packet)
 	return err
 }
 
-func readMessage(r io.Reader, maxData uint32) (message, error) {
+func readMessage(reader io.Reader, maxData uint32) (message, error) {
 	var header [headerSize]byte
-	if _, err := io.ReadFull(r, header[:]); err != nil {
+	if _, err := io.ReadFull(reader, header[:]); err != nil {
 		return message{}, err
 	}
-	m := message{
+
+	msg := message{
 		command: binary.LittleEndian.Uint32(header[0:]),
 		arg0:    binary.LittleEndian.Uint32(header[4:]),
 		arg1:    binary.LittleEndian.Uint32(header[8:]),
 	}
+
 	length := binary.LittleEndian.Uint32(header[12:])
-	if magic := binary.LittleEndian.Uint32(header[20:]); magic != m.command^0xffffffff {
-		return message{}, fmt.Errorf("adb: corrupt packet header (command %#x, magic %#x)", m.command, magic)
+	magic := binary.LittleEndian.Uint32(header[20:])
+
+	if magic != msg.command^0xffffffff {
+		return message{}, fmt.Errorf("adb: corrupt packet header (command %#x, magic %#x)",
+			msg.command, magic)
 	}
+
 	if length > maxData {
-		return message{}, fmt.Errorf("adb: %s payload of %d bytes exceeds the %d agreed", m, length, maxData)
+		return message{}, fmt.Errorf("adb: %s payload of %d bytes exceeds the %d agreed",
+			msg, length, maxData)
 	}
-	m.data = make([]byte, length)
-	if _, err := io.ReadFull(r, m.data); err != nil {
+
+	msg.data = make([]byte, length)
+	if _, err := io.ReadFull(reader, msg.data); err != nil {
 		return message{}, err
 	}
-	return m, nil
+
+	return msg, nil
 }

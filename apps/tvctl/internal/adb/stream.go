@@ -23,11 +23,12 @@ func (c *Conn) Exec(command string) ([]byte, error) {
 }
 
 func (c *Conn) runService(service string) ([]byte, error) {
-	s, err := c.open(service)
+	serviceStream, err := c.open(service)
 	if err != nil {
 		return nil, err
 	}
-	return io.ReadAll(s)
+
+	return io.ReadAll(serviceStream)
 }
 
 func (c *Conn) open(service string) (*stream, error) {
@@ -36,10 +37,12 @@ func (c *Conn) open(service string) (*stream, error) {
 	if err := c.send(message{cmdOPEN, localID, 0, append([]byte(service), 0)}); err != nil {
 		return nil, err
 	}
+
 	reply, err := c.receiveFor(localID)
 	if err != nil {
 		return nil, err
 	}
+
 	switch reply.command {
 	case cmdOKAY:
 		return &stream{conn: c, localID: localID, remoteID: reply.arg0}, nil
@@ -52,9 +55,9 @@ func (c *Conn) open(service string) (*stream, error) {
 
 func (c *Conn) receiveFor(localID uint32) (message, error) {
 	for {
-		m, err := c.receive(c.opts.ReadTimeout)
-		if err != nil || m.arg1 == localID {
-			return m, err
+		packet, err := c.receive(c.opts.ReadTimeout)
+		if err != nil || packet.arg1 == localID {
+			return packet, err
 		}
 	}
 }
@@ -76,7 +79,8 @@ func (s *stream) Write(data []byte) (int, error) {
 	written := 0
 	for len(data) > 0 {
 		size := min(len(data), int(s.conn.maxData))
-		if err := s.conn.send(message{cmdWRTE, s.localID, s.remoteID, data[:size]}); err != nil {
+		chunk := message{cmdWRTE, s.localID, s.remoteID, data[:size]}
+		if err := s.conn.send(chunk); err != nil {
 			return written, err
 		}
 		if err := s.awaitAcknowledgement(); err != nil {
@@ -85,20 +89,21 @@ func (s *stream) Write(data []byte) (int, error) {
 		written += size
 		data = data[size:]
 	}
+
 	return written, nil
 }
 
 func (s *stream) awaitAcknowledgement() error {
 	for {
-		m, err := s.receive()
+		packet, err := s.receive()
 		if err != nil {
 			return err
 		}
-		switch m.command {
+		switch packet.command {
 		case cmdOKAY:
 			return nil
 		case cmdWRTE:
-			if err := s.keep(m.data); err != nil {
+			if err := s.keep(packet.data); err != nil {
 				return err
 			}
 		case cmdCLSE:
@@ -108,7 +113,7 @@ func (s *stream) awaitAcknowledgement() error {
 	}
 }
 
-func (s *stream) Read(p []byte) (int, error) {
+func (s *stream) Read(buffer []byte) (int, error) {
 	for len(s.pending) == 0 {
 		if s.closed {
 			return 0, io.EOF
@@ -117,23 +122,26 @@ func (s *stream) Read(p []byte) (int, error) {
 			return 0, err
 		}
 	}
-	n := copy(p, s.pending)
-	s.pending = s.pending[n:]
-	return n, nil
+
+	copied := copy(buffer, s.pending)
+	s.pending = s.pending[copied:]
+	return copied, nil
 }
 
 func (s *stream) receiveIntoPending() error {
-	m, err := s.receive()
+	packet, err := s.receive()
 	if err != nil {
 		return err
 	}
-	switch m.command {
+
+	switch packet.command {
 	case cmdWRTE:
-		return s.keep(m.data)
+		return s.keep(packet.data)
 	case cmdCLSE:
 		s.closed = true
 		return s.reply(cmdCLSE)
 	}
+
 	return nil
 }
 
@@ -141,20 +149,23 @@ func (s *stream) Close() error {
 	if s.closed {
 		return nil
 	}
+
 	if err := s.reply(cmdCLSE); err != nil {
 		return err
 	}
+
 	for !s.closed {
-		m, err := s.receive()
+		packet, err := s.receive()
 		if err != nil {
 			return err
 		}
-		switch m.command {
+		switch packet.command {
 		case cmdCLSE:
 			s.closed = true
 		case cmdWRTE:
 			s.reply(cmdOKAY)
 		}
 	}
+
 	return nil
 }

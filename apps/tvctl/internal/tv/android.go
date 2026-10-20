@@ -8,9 +8,14 @@ import (
 	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/contract"
 )
 
+const homeIntent = "-a android.intent.action.MAIN -c android.intent.category.HOME"
+
 const (
-	HomeQuery        = "cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME"
-	HomeClaimsQuery  = "cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME"
+	HomeQuery       = "cmd package resolve-activity --brief " + homeIntent
+	HomeClaimsQuery = "cmd package query-activities --brief " + homeIntent
+)
+
+const (
 	Launcher         = contract.LauncherPackage
 	LauncherActivity = Launcher + "/" + contract.MainActivity
 	StockLauncher    = "com.google.android.tvlauncher"
@@ -23,64 +28,74 @@ var (
 	claimLine   = regexp.MustCompile(`^\s*([A-Za-z0-9_.]+)/`)
 )
 
-func LastLine(out string) string {
-	lines := strings.Split(strings.ReplaceAll(out, "\r", ""), "\n")
-	for i := len(lines) - 1; i >= 0; i-- {
-		if line := strings.TrimSpace(lines[i]); line != "" {
+func LastLine(output string) string {
+	lines := outputLines(output)
+	for index := len(lines) - 1; index >= 0; index-- {
+		if line := strings.TrimSpace(lines[index]); line != "" {
 			return line
 		}
 	}
+
 	return ""
 }
 
+func outputLines(output string) []string {
+	return strings.Split(strings.ReplaceAll(output, "\r", ""), "\n")
+}
+
 func Home(dev Device) string {
-	out, err := dev.Shell(HomeQuery)
+	output, err := dev.Shell(HomeQuery)
 	if err != nil {
 		return ""
 	}
-	return LastLine(out)
+
+	return LastLine(output)
 }
 
 func PackageOf(component string) string {
-	pkg, _, _ := strings.Cut(component, "/")
-	return pkg
+	packageName, _, _ := strings.Cut(component, "/")
+	return packageName
+}
+
+func SetHomeTo(packageName string) string {
+	return "cmd package set-home-activity --user 0 $(" + HomeQuery + " " + packageName +
+		" | tail -n 1)"
 }
 
 func HomeClaimants(dev Device) ([]string, error) {
-	out, err := dev.Shell(HomeClaimsQuery)
+	output, err := dev.Shell(HomeClaimsQuery)
 	if err != nil {
 		return nil, err
 	}
+
 	seen := map[string]bool{}
 	var claimants []string
-	for _, line := range strings.Split(strings.ReplaceAll(out, "\r", ""), "\n") {
-		if m := claimLine.FindStringSubmatch(line); m != nil && !seen[m[1]] {
-			seen[m[1]] = true
-			claimants = append(claimants, m[1])
+	for _, line := range outputLines(output) {
+		match := claimLine.FindStringSubmatch(line)
+		if match == nil || seen[match[1]] {
+			continue
 		}
+		seen[match[1]] = true
+		claimants = append(claimants, match[1])
 	}
+
 	sort.Strings(claimants)
 	return claimants, nil
 }
 
 func Packages(dev Device, flags string) (map[string]bool, error) {
-	command := "pm list packages"
-	if flags != "" {
-		command += " " + flags
-	}
-	out, err := dev.Shell(command)
+	command := strings.TrimSpace("pm list packages " + flags)
+	output, err := dev.Shell(command)
 	if err != nil {
 		return nil, err
 	}
+
 	names := map[string]bool{}
-	for _, line := range strings.Split(out, "\n") {
-		if name, ok := strings.CutPrefix(strings.TrimSpace(line), "package:"); ok {
+	for _, line := range strings.Split(output, "\n") {
+		if name, isPackage := strings.CutPrefix(strings.TrimSpace(line), "package:"); isPackage {
 			names[strings.TrimSpace(name)] = true
 		}
 	}
-	return names, nil
-}
 
-func SetHomeTo(pkg string) string {
-	return "cmd package set-home-activity --user 0 $(" + HomeQuery + " " + pkg + " | tail -n 1)"
+	return names, nil
 }

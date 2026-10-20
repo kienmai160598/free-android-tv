@@ -20,12 +20,15 @@ func (o Options) withDefaults() Options {
 	if o.DialTimeout == 0 {
 		o.DialTimeout = 10 * time.Second
 	}
+
 	if o.AuthTimeout == 0 {
 		o.AuthTimeout = 120 * time.Second
 	}
+
 	if o.ReadTimeout == 0 {
 		o.ReadTimeout = 120 * time.Second
 	}
+
 	return o
 }
 
@@ -37,7 +40,8 @@ type Conn struct {
 	Banner  string
 }
 
-var errNobodyAllowed = errors.New(`nobody allowed the connection on the TV in time; accept "Allow USB debugging?" there and run this again`)
+var errNobodyAllowed = errors.New("nobody allowed the connection on the TV in time; " +
+	`accept "Allow USB debugging?" there and run this again`)
 
 func Dial(host string, port int, key *Key, opts Options) (*Conn, error) {
 	opts = opts.withDefaults()
@@ -46,11 +50,13 @@ func Dial(host string, port int, key *Key, opts Options) (*Conn, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	conn, err := NewConn(transport, key, opts)
 	if err != nil {
 		transport.Close()
 		return nil, fmt.Errorf("adb handshake with %s: %w", address, err)
 	}
+
 	return conn, nil
 }
 
@@ -59,6 +65,7 @@ func NewConn(transport net.Conn, key *Key, opts Options) (*Conn, error) {
 	if err := conn.handshake(key); err != nil {
 		return nil, err
 	}
+
 	return conn, nil
 }
 
@@ -68,9 +75,11 @@ type handshakeState struct {
 }
 
 func (c *Conn) handshake(key *Key) error {
-	if err := c.send(message{cmdCNXN, protocolVersion, hostMaxData, []byte("host::\x00")}); err != nil {
+	connect := message{cmdCNXN, protocolVersion, hostMaxData, []byte("host::\x00")}
+	if err := c.send(connect); err != nil {
 		return err
 	}
+
 	var state handshakeState
 	for {
 		reply, err := c.receive(c.handshakeTimeout(state))
@@ -94,6 +103,7 @@ func (c *Conn) handshakeTimeout(state handshakeState) time.Duration {
 	if state.sentPublicKey {
 		return c.opts.AuthTimeout
 	}
+
 	return c.opts.ReadTimeout
 }
 
@@ -101,6 +111,7 @@ func (c *Conn) acceptConnection(reply message) {
 	if reply.arg1 > 0 && reply.arg1 < c.maxData {
 		c.maxData = reply.arg1
 	}
+
 	c.Banner = string(bytes.TrimRight(reply.data, "\x00"))
 }
 
@@ -124,6 +135,7 @@ func (c *Conn) sendSignature(token []byte, key *Key) error {
 	if err != nil {
 		return err
 	}
+
 	return c.send(message{cmdAUTH, authSignature, 0, signature})
 }
 
@@ -131,6 +143,7 @@ func (c *Conn) offerPublicKey(key *Key) error {
 	if c.opts.OnPrompt != nil {
 		c.opts.OnPrompt()
 	}
+
 	publicKey := append(bytes.TrimRight(key.PublicKey(), "\n"), 0)
 	return c.send(message{cmdAUTH, authRSAPublicKey, 0, publicKey})
 }

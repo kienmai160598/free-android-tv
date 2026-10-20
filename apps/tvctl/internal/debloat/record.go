@@ -29,6 +29,7 @@ func RecordPath(home, listPath, host string) string {
 	if host == "" {
 		hostTag = "no-host"
 	}
+
 	listHash := sha1.Sum([]byte(resolvedPath(listPath)))
 	fileName := fmt.Sprintf("recovery-%s-%s.json", hostTag, hex.EncodeToString(listHash[:])[:8])
 	return filepath.Join(home, ".cleanyourtv", fileName)
@@ -39,9 +40,11 @@ func resolvedPath(path string) string {
 	if err != nil {
 		return path
 	}
+
 	if real, err := filepath.EvalSymlinks(absolute); err == nil {
 		return real
 	}
+
 	return absolute
 }
 
@@ -50,13 +53,16 @@ func LoadRecord(path string) (*Record, error) {
 	if err != nil {
 		return nil, unusableRecord(path, err.Error())
 	}
+
 	var record Record
 	if err := json.Unmarshal(data, &record); err != nil {
 		return nil, unusableRecord(path, err.Error())
 	}
+
 	if problem := record.validationProblem(); problem != "" {
 		return nil, unusableRecord(path, problem)
 	}
+
 	return &record, nil
 }
 
@@ -64,6 +70,7 @@ func (r *Record) validationProblem() string {
 	if r.Version != recordVersion || r.Packages == nil {
 		return "unknown format"
 	}
+
 	for name, state := range r.Packages {
 		if !tv.PackageName.MatchString(name) {
 			return fmt.Sprintf("not a package name: %q", name)
@@ -72,9 +79,11 @@ func (r *Record) validationProblem() string {
 			return fmt.Sprintf("unknown state for %s: %q", name, state)
 		}
 	}
+
 	if r.Home != nil && !tv.Component.MatchString(*r.Home) {
 		return fmt.Sprintf("not a Home component: %q", *r.Home)
 	}
+
 	return ""
 }
 
@@ -91,6 +100,7 @@ func (r *Record) missing(names []string) []string {
 			missing = append(missing, name)
 		}
 	}
+
 	return missing
 }
 
@@ -101,6 +111,7 @@ func (r *Record) countState(state string) int {
 			count++
 		}
 	}
+
 	return count
 }
 
@@ -109,9 +120,11 @@ func writeRecord(path string, record *Record) error {
 	if err != nil {
 		return err
 	}
+
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
+
 	return writeFileAtomically(path, append(data, '\n'))
 }
 
@@ -121,16 +134,20 @@ func writeFileAtomically(path string, data []byte) error {
 	if err != nil {
 		return err
 	}
+
 	if _, err := file.Write(data); err != nil {
 		file.Close()
 		return err
 	}
+
 	if err := file.Sync(); err != nil {
 		file.Close()
 		return err
 	}
+
 	if err := file.Close(); err != nil {
 		return err
 	}
+
 	return os.Rename(temporary, path)
 }

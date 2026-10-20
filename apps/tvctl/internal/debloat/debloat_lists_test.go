@@ -17,12 +17,14 @@ func debloatListFolders(t *testing.T) []string {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	var folders []string
 	for _, entry := range entries {
 		if entry.IsDir() {
 			folders = append(folders, entry.Name())
 		}
 	}
+
 	return folders
 }
 
@@ -57,11 +59,16 @@ func TestDebloatListIndexMatchesFolders(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	lines := strings.Split(string(data), "\n")
-	start := slices.IndexFunc(lines, func(l string) bool { return strings.HasPrefix(l, "| Folder |") })
+	start := slices.IndexFunc(
+		lines,
+		func(l string) bool { return strings.HasPrefix(l, "| Folder |") },
+	)
 	if start < 0 {
 		t.Fatal("no | Folder | table")
 	}
+
 	cell := regexp.MustCompile("^\\|\\s*`([^`/]+)/`\\s*\\|")
 	var listed []string
 	for _, line := range lines[start+2:] {
@@ -76,6 +83,7 @@ func TestDebloatListIndexMatchesFolders(t *testing.T) {
 	}
 	sort.Strings(listed)
 	if folders := debloatListFolders(t); !slices.Equal(listed, folders) {
-		t.Errorf("packages/debloat-lists/README.md rows and its folders differ\nrows:    %v\nfolders: %v", listed, folders)
+		t.Errorf("packages/debloat-lists/README.md rows and its folders differ\n"+
+			"rows:    %v\nfolders: %v", listed, folders)
 	}
 }

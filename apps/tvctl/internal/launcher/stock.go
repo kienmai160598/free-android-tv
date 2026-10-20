@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"slices"
+	"strings"
 
 	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/tv"
 )
@@ -17,15 +18,30 @@ var knownStockLaunchers = []string{
 
 const androidChooser = "android"
 
+const homeQueryFailed = "could not ask the TV which launcher owns Home (%v). " +
+	"Check the host and the debugging prompt on the TV, or pass --stock <package> yourself"
+
+const chooserIsAmbiguous = "Home is Android's launcher chooser and %d known stock launchers " +
+	"claim Home: pick a default on the TV first, or pass --stock <package> or --stock none"
+
+var unknownHomeOwnerHelp = strings.Join([]string{
+	"Home currently resolves to '%s', which is not a stock launcher this tool knows.",
+	"  android                                  = Android's chooser; pick a default on the TV",
+	"  com.google.android.tungsten.setupwraith  = Google TV's setup wizard; see troubleshooting",
+	"  anything else                            = another launcher is the default",
+	"Pass --stock <package to disable> or --stock none",
+}, "\n")
+
 func chooseStockLauncher(dev tv.Device, chosen string, out io.Writer) (string, error) {
 	if chosen != "" {
 		return validChosenLauncher(chosen)
 	}
+
 	answer, err := dev.Shell(tv.HomeQuery)
 	if err != nil {
-		return "", fmt.Errorf("could not ask the TV which launcher owns Home (%v). Check the host and the debugging "+
-			"prompt on the TV, or pass --stock <package> yourself", err)
+		return "", fmt.Errorf(homeQueryFailed, err)
 	}
+
 	owner := tv.PackageOf(tv.LastLine(answer))
 	switch {
 	case slices.Contains(knownStockLaunchers, owner):
@@ -44,6 +60,7 @@ func validChosenLauncher(chosen string) (string, error) {
 	if chosen != NoStock && !tv.PackageName.MatchString(chosen) {
 		return "", fmt.Errorf("not a package name: %q", chosen)
 	}
+
 	return chosen, nil
 }
 
@@ -55,11 +72,13 @@ func stockLauncherBehindChooser(dev tv.Device, out io.Writer) (string, error) {
 			found = append(found, known)
 		}
 	}
+
 	if len(found) != 1 {
-		return "", fmt.Errorf("Home is Android's launcher chooser and %d known stock launchers claim Home: pick a "+
-			"default on the TV first, or pass --stock <package to disable> or --stock none", len(found))
+		return "", fmt.Errorf(chooserIsAmbiguous, len(found))
 	}
-	fmt.Fprintf(out, "Home is Android's chooser; the stock launcher among the candidates is %s.\n", found[0])
+
+	fmt.Fprintf(out, "Home is Android's chooser; the stock launcher among the candidates is %s.\n",
+		found[0])
 	return found[0], nil
 }
 
@@ -67,9 +86,6 @@ func unknownHomeOwner(owner string) error {
 	if owner == "" {
 		owner = "nothing"
 	}
-	return fmt.Errorf("Home currently resolves to '%s', which is not a stock launcher this tool knows.\n"+
-		"  android                                  = Android's launcher chooser (two launchers tie); pick a default on the TV first\n"+
-		"  com.google.android.tungsten.setupwraith  = Google TV's setup wizard; see README, Troubleshooting\n"+
-		"  anything else                            = another launcher is the default\n"+
-		"Pass --stock <package to disable> or --stock none", owner)
+
+	return fmt.Errorf(unknownHomeOwnerHelp, owner)
 }

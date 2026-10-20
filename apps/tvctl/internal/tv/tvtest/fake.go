@@ -15,6 +15,7 @@ func (f *Fake) Shell(command string) (string, error) {
 	if f.Answer == nil {
 		return "", nil
 	}
+
 	return f.Answer(command)
 }
 
@@ -22,6 +23,7 @@ func (f *Fake) Push(local, remote string) error {
 	if f.Pushed == nil {
 		f.Pushed = map[string]string{}
 	}
+
 	f.Pushed[remote] = local
 	return nil
 }

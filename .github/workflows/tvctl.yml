@@ -8,28 +8,31 @@ on:
 permissions:
   contents: read
 
+env:
+  GENERATED: >-
+    apps/tvctl/internal/contract
+    apps/launcher/app/src/main/java/com/gathin/tvhome/Contract.java
+
 jobs:
   validate:
     name: Validate
     if: inputs.changed
     runs-on: ${{ vars.RUNNER || 'ubuntu-latest' }}
-    defaults:
-      run:
-        working-directory: apps/tvctl
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-go
 
-      - name: Go format
-        run: test -z "$(gofmt -l .)" && test -z "$(gofmt -l ../../packages/contract)"
+      - name: Style
+        run: scripts/check-style
 
       - name: Generated contract matches contract.json
-        working-directory: packages/contract
         run: |
-          go run ./cmd/generate
-          git diff --exit-code -- ../../apps/tvctl/internal/contract ../../apps/launcher/app/src/main/java/com/gathin/tvhome/Contract.java
+          (cd packages/contract && go run ./cmd/generate)
+          git diff --exit-code -- $GENERATED
 
-      - run: go vet ./... && go test ./...
+      - name: Vet and test
+        working-directory: apps/tvctl
+        run: go vet ./... && go test ./...
 
   build:
     name: Build
@@ -37,7 +40,13 @@ jobs:
     runs-on: ${{ vars.RUNNER || 'ubuntu-latest' }}
     strategy:
       matrix:
-        target: [darwin/arm64, darwin/amd64, linux/amd64, linux/arm64, windows/amd64, windows/arm64]
+        target:
+          - darwin/arm64
+          - darwin/amd64
+          - linux/amd64
+          - linux/arm64
+          - windows/amd64
+          - windows/arm64
     defaults:
       run:
         working-directory: apps/tvctl
@@ -48,8 +57,12 @@ jobs:
       - uses: ./.github/actions/setup-go
 
       - name: Cross-compile
-        run: |
-          os=${TARGET%/*}; arch=${TARGET#*/}; ext=""; [ "$os" = windows ] && ext=.exe
-          GOOS=$os GOARCH=$arch go build -trimpath -ldflags="-s -w" -o "dist/tvctl-$os-$arch$ext" ./cmd/tvctl
         env:
           TARGET: ${{ matrix.target }}
+        run: |
+          os=${TARGET%/*}
+          arch=${TARGET#*/}
+          extension=""
+          [ "$os" = windows ] && extension=.exe
+          GOOS=$os GOARCH=$arch go build -trimpath -ldflags="-s -w" \
+            -o "dist/tvctl-$os-$arch$extension" ./cmd/tvctl

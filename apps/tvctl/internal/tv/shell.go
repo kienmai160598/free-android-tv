@@ -22,6 +22,7 @@ func Batch(dev Device, commands []string, out io.Writer) error {
 			return err
 		}
 	}
+
 	return nil
 }
 

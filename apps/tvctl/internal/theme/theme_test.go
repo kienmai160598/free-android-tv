@@ -20,6 +20,7 @@ func writeTheme(t *testing.T, files map[string]string) string {
 			t.Fatal(err)
 		}
 	}
+
 	return folder
 }
 
@@ -36,18 +37,29 @@ func TestApplyPushesTheThemeAndRestartsHome(t *testing.T) {
 	if err := Apply(dev, folder, &out); err != nil {
 		t.Fatal(err)
 	}
-	for _, remote := range []string{dir + "/config.json", remoteWallpaper, dir + "/wallpapers/one.png", dir + "/wallpapers/two.WEBP"} {
+
+	expected := []string{
+		remoteConfig,
+		remoteWallpaper,
+		remoteWallpapers + "/one.png",
+		remoteWallpapers + "/two.WEBP",
+	}
+
+	for _, remote := range expected {
 		if _, ok := dev.Pushed[remote]; !ok {
 			t.Errorf("%s was not pushed", remote)
 		}
 	}
+
 	if len(dev.Pushed) != 4 {
 		t.Errorf("pushed %v", dev.Pushed)
 	}
+
 	last := dev.Commands[len(dev.Commands)-1]
 	if !strings.Contains(last, "theme_revision") || !strings.Contains(last, "am force-stop") {
 		t.Errorf("last command %q", last)
 	}
+
 	if !strings.Contains(out.String(), "Theme aurora is on the TV") {
 		t.Errorf("output %q", out.String())
 	}
@@ -55,13 +67,16 @@ func TestApplyPushesTheThemeAndRestartsHome(t *testing.T) {
 
 func TestApplyRemovesAWallpaperTheThemeDoesNotHave(t *testing.T) {
 	dev := &tvtest.Fake{}
-	if err := Apply(dev, writeTheme(t, map[string]string{"config.json": "{}"}), &bytes.Buffer{}); err != nil {
+	folder := writeTheme(t, map[string]string{"config.json": "{}"})
+	if err := Apply(dev, folder, &bytes.Buffer{}); err != nil {
 		t.Fatal(err)
 	}
+
 	found := false
 	for _, command := range dev.Commands {
 		found = found || command == "rm -f "+remoteWallpaper
 	}
+
 	if !found {
 		t.Errorf("commands %v", dev.Commands)
 	}
@@ -73,6 +88,7 @@ func TestBadThemesReachNothing(t *testing.T) {
 		"invalid json": {"config.json": "{nope"},
 		"unsafe name":  {"config.json": "{}", "wallpapers/a b;reboot.jpg": "jpg"},
 	}
+
 	for name, files := range cases {
 		t.Run(name, func(t *testing.T) {
 			dev := &tvtest.Fake{}
@@ -91,6 +107,7 @@ func TestShippedThemesAreValid(t *testing.T) {
 	if len(folders) == 0 {
 		t.Fatal("no themes found")
 	}
+
 	for _, config := range folders {
 		folder := filepath.Dir(config)
 		if _, err := wallpaperFiles(folder); err != nil {

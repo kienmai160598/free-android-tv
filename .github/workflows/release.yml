@@ -16,6 +16,8 @@ jobs:
         working-directory: apps/tvctl
     env:
       CGO_ENABLED: "0"
+      TARGETS: >-
+        darwin/arm64 darwin/amd64 linux/amd64 linux/arm64 windows/amd64 windows/arm64
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-go
@@ -24,12 +26,17 @@ jobs:
 
       - name: Cross-compile
         run: |
-          for target in darwin/arm64 darwin/amd64 linux/amd64 linux/arm64 windows/amd64 windows/arm64; do
-            os=${target%/*}; arch=${target#*/}; ext=""; [ "$os" = windows ] && ext=.exe
-            GOOS=$os GOARCH=$arch go build -trimpath -ldflags="-s -w" -o "dist/tvctl-$os-$arch$ext" ./cmd/tvctl
+          for target in $TARGETS; do
+            os=${target%/*}
+            arch=${target#*/}
+            extension=""
+            [ "$os" = windows ] && extension=.exe
+            GOOS=$os GOARCH=$arch go build -trimpath -ldflags="-s -w" \
+              -o "dist/tvctl-$os-$arch$extension" ./cmd/tvctl
           done
           (cd dist && sha256sum * > SHA256SUMS)
 
-      - run: gh release create "$GITHUB_REF_NAME" dist/* --generate-notes
+      - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --generate-notes

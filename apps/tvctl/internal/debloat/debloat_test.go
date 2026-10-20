@@ -59,6 +59,7 @@ func packageLines(names []string) string {
 	for _, name := range names {
 		b.WriteString("package:" + name + "\n")
 	}
+
 	return b.String()
 }
 
@@ -120,6 +121,7 @@ func newWorld(t *testing.T, names ...string) *world {
 	if len(names) == 0 {
 		names = []string{"com.example.enabled", "com.example.already_off", "com.example.absent"}
 	}
+
 	w.writeList(names...)
 	w.record = RecordPath(w.home, w.list, host)
 	return w
@@ -153,14 +155,17 @@ func (w *world) restore(f *fakeTV) result {
 	if err == nil {
 		err = tv.Batch(dev, commands, &out)
 	}
+
 	return result{err, out.String(), warn.String(), dev.Commands}
 }
 
 func mutations(commands []string) []string {
 	var sent []string
 	for _, command := range commands {
-		if strings.HasPrefix(command, "pm disable-user") || strings.HasPrefix(command, "pm enable") ||
-			command == "pm list packages -d" && len(sent) > 0 || strings.HasPrefix(command, "settings put") {
+		if strings.HasPrefix(command, "pm disable-user") ||
+			strings.HasPrefix(command, "pm enable") ||
+			command == "pm list packages -d" && len(sent) > 0 ||
+			strings.HasPrefix(command, "settings put") {
 			sent = append(sent, command)
 		}
 	}
@@ -173,13 +178,16 @@ func (w *world) loadRecord() *Record {
 	if errors.Is(err, os.ErrNotExist) {
 		return nil
 	}
+
 	if err != nil {
 		w.t.Fatal(err)
 	}
+
 	var record Record
 	if err := json.Unmarshal(data, &record); err != nil {
 		w.t.Fatal(err)
 	}
+
 	return &record
 }
 
@@ -202,20 +210,25 @@ func TestSaveRecordsTheStateUndoNeeds(t *testing.T) {
 
 		stock: "enabled",
 	}
+
 	if !maps.Equal(record.Packages, want) {
 		t.Errorf("packages = %v", record.Packages)
 	}
+
 	if record.Home == nil || *record.Home != stockHome {
 		t.Errorf("home = %v", record.Home)
 	}
+
 	if record.Settings["window_animation_scale"] != "0.5" {
 		t.Errorf("settings = %v", record.Settings)
 	}
+
 	wantSent := []string{
 		"pm disable-user --user 0 com.example.enabled",
 		"pm disable-user --user 0 com.example.already_off",
 		"pm disable-user --user 0 com.example.absent",
 	}
+
 	if !slices.Equal(r.sent[:3], wantSent) {
 		t.Errorf("sent %v", r.sent)
 	}
@@ -234,6 +247,7 @@ func TestRetryKeepsTheOriginalRecord(t *testing.T) {
 	if !strings.Contains(r.out, "keeping the recovery record") {
 		t.Errorf("output: %s", r.out)
 	}
+
 	if !maps.Equal(w.loadRecord().Packages, first.Packages) {
 		t.Error("the record changed on a retry")
 	}
@@ -247,9 +261,11 @@ func TestFailedSaveDisablesNothing(t *testing.T) {
 	if r.err == nil {
 		t.Fatal("expected an error")
 	}
+
 	if len(r.sent) != 0 {
 		t.Errorf("a failed record must not be followed by a mutation: %v", r.sent)
 	}
+
 	if w.loadRecord() != nil {
 		t.Error("a record was written")
 	}
@@ -263,9 +279,11 @@ func TestCorruptRecordIsNotOverwritten(t *testing.T) {
 	if r.err == nil || !strings.Contains(r.err.Error(), "not a usable recovery record") {
 		t.Fatalf("error = %v", r.err)
 	}
+
 	if data, _ := os.ReadFile(w.record); string(data) != "{not json" {
 		t.Error("the original file is left for inspection")
 	}
+
 	if len(r.sent) != 0 {
 		t.Errorf("nothing was to be disabled: %v", r.sent)
 	}
@@ -291,14 +309,22 @@ func TestRestoreReplaysRecordedStates(t *testing.T) {
 			t.Errorf("missing %q in %v", want, r.sent)
 		}
 	}
-	for _, unwanted := range []string{"pm enable com.example.already_off", "pm enable com.example.absent"} {
+
+	unwantedCommands := []string{
+		"pm enable com.example.already_off",
+		"pm enable com.example.absent",
+	}
+
+	for _, unwanted := range unwantedCommands {
 		if slices.Contains(r.sent, unwanted) {
 			t.Errorf("sent %q: a package already disabled or absent stays as it was", unwanted)
 		}
 	}
+
 	if r.sent[len(r.sent)-1] != "pm list packages -d" {
 		t.Errorf("last command %q", r.sent[len(r.sent)-1])
 	}
+
 	if !strings.Contains(r.warn, "leaving com.example.already_off alone") {
 		t.Errorf("warnings: %s", r.warn)
 	}
@@ -319,6 +345,7 @@ func TestValidRecordRestoresTheSameBatch(t *testing.T) {
 		"settings put global animator_duration_scale 1.0",
 		"pm list packages -d",
 	}
+
 	if !slices.Equal(r.sent, want) {
 		t.Errorf("batch\n got %q\nwant %q", r.sent, want)
 	}
@@ -331,11 +358,23 @@ func TestRestoreWithoutARecordSaysSoAndFallsBack(t *testing.T) {
 	if !strings.Contains(r.warn, "no recovery record") {
 		t.Errorf("warnings: %s", r.warn)
 	}
-	want := []string{"pm enable com.example.enabled", "pm enable com.example.already_off", "pm enable com.example.absent"}
+
+	want := []string{
+		"pm enable com.example.enabled",
+		"pm enable com.example.already_off",
+		"pm enable com.example.absent",
+	}
+
 	if !slices.Equal(r.sent[:3], want) {
 		t.Errorf("sent %v", r.sent)
 	}
-	for _, command := range []string{"pm enable " + stock, "settings put global window_animation_scale 1.0"} {
+
+	fallbackCommands := []string{
+		"pm enable " + stock,
+		"settings put global window_animation_scale 1.0",
+	}
+
+	for _, command := range fallbackCommands {
 		if !slices.Contains(r.sent, command) {
 			t.Errorf("missing %q", command)
 		}
@@ -351,6 +390,7 @@ func TestEditedListLeavesNewNamesAlone(t *testing.T) {
 	if slices.Contains(r.sent, "pm enable com.example.added_later") {
 		t.Error("a name the record never saw was enabled")
 	}
+
 	if !strings.Contains(r.warn, "not in the record, leaving alone: com.example.added_later") {
 		t.Errorf("warnings: %s", r.warn)
 	}
@@ -360,9 +400,20 @@ func TestRerunWithEditedListRecordsTheNewNames(t *testing.T) {
 	w := newWorld(t)
 	must(t, w.disable(newTV(), DisableOptions{}))
 	first := w.loadRecord()
-	w.writeList("com.example.enabled", "com.example.already_off", "com.example.absent", "com.example.added_later")
+	w.writeList(
+		"com.example.enabled",
+		"com.example.already_off",
+		"com.example.absent",
+		"com.example.added_later",
+	)
 	f := newTV()
-	f.installed = []string{"com.example.enabled", "com.example.already_off", "com.example.added_later", stock}
+	f.installed = []string{
+		"com.example.enabled",
+		"com.example.already_off",
+		"com.example.added_later",
+		stock,
+	}
+
 	f.disabled = []string{"com.example.enabled", "com.example.already_off"}
 	must(t, w.disable(f, DisableOptions{}))
 	record := w.loadRecord()
@@ -375,14 +426,17 @@ func TestRerunWithEditedListRecordsTheNewNames(t *testing.T) {
 			t.Errorf("%s changed from %s to %s", name, state, record.Packages[name])
 		}
 	}
+
 	if record.Created != first.Created {
 		t.Error("created changed")
 	}
+
 	r := w.restore(f)
 	must(t, r)
 	if !slices.Contains(r.sent, "pm enable com.example.added_later") {
 		t.Error("a name added to the list later is not left disabled forever")
 	}
+
 	if slices.Contains(r.sent, "pm enable com.example.already_off") {
 		t.Error("already_off was enabled")
 	}
@@ -397,6 +451,7 @@ func TestCustomLauncherHomeRestoresTheStockLauncher(t *testing.T) {
 	if home := w.loadRecord().Home; home == nil || *home != tv.LauncherActivity {
 		t.Fatalf("home = %v", home)
 	}
+
 	r := w.restore(f)
 	must(t, r)
 	var homes []string
@@ -405,9 +460,12 @@ func TestCustomLauncherHomeRestoresTheStockLauncher(t *testing.T) {
 			homes = append(homes, command)
 		}
 	}
-	if len(homes) != 1 || !strings.Contains(homes[0], "resolve-activity") || !strings.Contains(homes[0], stock) {
+
+	if len(homes) != 1 || !strings.Contains(homes[0], "resolve-activity") ||
+		!strings.Contains(homes[0], stock) {
 		t.Fatalf("home commands %v", homes)
 	}
+
 	enable := slices.Index(r.sent, "pm enable "+stock)
 	if enable < 0 || enable > slices.Index(r.sent, homes[0]) {
 		t.Error("the stock launcher is enabled before it is made Home")
@@ -425,6 +483,7 @@ func TestStockLauncherDisabledBeforeCleanupStaysDisabled(t *testing.T) {
 	if w.loadRecord().Packages[stock] != "disabled" {
 		t.Fatal("the stock launcher should be recorded as disabled")
 	}
+
 	r := w.restore(f)
 	must(t, r)
 	if slices.Contains(r.sent, "pm enable "+stock) {
@@ -444,20 +503,33 @@ func TestStockLauncherEnabledOnceWhenItOwnedHome(t *testing.T) {
 			count++
 		}
 	}
+
 	if count != 1 {
 		t.Errorf("enabled %d times", count)
 	}
 }
 
 func TestEditedRecordIsRefusedAndLeftAlone(t *testing.T) {
-	edits := map[string]func(map[string]any){
-		"package name": func(r map[string]any) {
-			r["packages"].(map[string]any)["com.example.x; settings put global adb_enabled 0 #"] = "enabled"
-		},
-		"package state": func(r map[string]any) { r["packages"].(map[string]any)["com.example.enabled"] = "on" },
-		"home":          func(r map[string]any) { r["home"] = stockHome + "; settings put global adb_enabled 0" },
-		"settings":      func(r map[string]any) { r["settings"] = []string{"window_animation_scale", "0.5"} },
+	injection := "; settings put global adb_enabled 0"
+	packagesOf := func(record map[string]any) map[string]any {
+		return record["packages"].(map[string]any)
 	}
+
+	edits := map[string]func(map[string]any){
+		"package name": func(record map[string]any) {
+			packagesOf(record)["com.example.x"+injection+" #"] = "enabled"
+		},
+		"package state": func(record map[string]any) {
+			packagesOf(record)["com.example.enabled"] = "on"
+		},
+		"home": func(record map[string]any) {
+			record["home"] = stockHome + injection
+		},
+		"settings": func(record map[string]any) {
+			record["settings"] = []string{"window_animation_scale", "0.5"}
+		},
+	}
+
 	for field, edit := range edits {
 		for _, operation := range []string{"restore", "disable"} {
 			t.Run(field+"/"+operation, func(t *testing.T) {
@@ -476,7 +548,8 @@ func TestEditedRecordIsRefusedAndLeftAlone(t *testing.T) {
 				} else {
 					r = w.disable(newTV(), DisableOptions{})
 				}
-				if r.err == nil || !strings.Contains(r.err.Error(), "not a usable recovery record") ||
+				if r.err == nil ||
+					!strings.Contains(r.err.Error(), "not a usable recovery record") ||
 					!strings.Contains(r.err.Error(), w.record) {
 					t.Fatalf("error = %v", r.err)
 				}
@@ -495,18 +568,33 @@ func TestRecordPathMatchesThePythonTools(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("the recorded path is a Unix path")
 	}
-	got := filepath.Base(RecordPath("/home", "/home/alice/cleanyourtv/examples/tcl-55c815/debloat.txt", "192.168.1.50"))
+
+	got := filepath.Base(
+		RecordPath(
+			"/home",
+			"/home/alice/cleanyourtv/examples/tcl-55c815/debloat.txt",
+			"192.168.1.50",
+		),
+	)
 	if got != "recovery-192.168.1.50-92b9e625.json" {
 		t.Errorf("got %s", got)
 	}
-	if got := filepath.Base(RecordPath("/home", "/x/l.txt", "")); !strings.HasPrefix(got, "recovery-no-host-") {
+
+	if got := filepath.Base(RecordPath("/home", "/x/l.txt", "")); !strings.HasPrefix(
+		got,
+		"recovery-no-host-",
+	) {
 		t.Errorf("got %s", got)
 	}
 }
 
 func TestListThatIsNotPackageNamesIsRefused(t *testing.T) {
 	w := newWorld(t)
-	os.WriteFile(w.list, []byte("com.example.good\ncom.example.evil;settings put global adb_enabled 0\n"), 0o644)
+	os.WriteFile(
+		w.list,
+		[]byte("com.example.good\ncom.example.evil;settings put global adb_enabled 0\n"),
+		0o644,
+	)
 	for _, operation := range []string{"disable", "restore"} {
 		var r result
 		if operation == "disable" {
@@ -525,7 +613,10 @@ func TestListThatIsNotPackageNamesIsRefused(t *testing.T) {
 }
 
 func TestWindowsBOMAndCRLFAreNormalised(t *testing.T) {
-	names, err := ParseList("l", []byte("\xef\xbb\xbf# My TV, saved in Notepad\r\ncom.example.one\r\ncom.example.two   # a note\r\n\r\n"))
+	notepadList := "\xef\xbb\xbf# My TV, saved in Notepad\r\n" +
+		"com.example.one\r\n" +
+		"com.example.two   # a note\r\n\r\n"
+	names, err := ParseList("l", []byte(notepadList))
 	if err != nil || !slices.Equal(names, []string{"com.example.one", "com.example.two"}) {
 		t.Errorf("got %q, %v", names, err)
 	}
@@ -554,10 +645,16 @@ func TestTheOwnerOfHomeIsSkippedWhenItIsTheOnlyHome(t *testing.T) {
 	if slices.Contains(r.sent, "pm disable-user --user 0 "+stock) {
 		t.Error("the only Home the TV has must not be disabled")
 	}
-	want := []string{"pm disable-user --user 0 com.example.before", "pm disable-user --user 0 com.example.after"}
+
+	want := []string{
+		"pm disable-user --user 0 com.example.before",
+		"pm disable-user --user 0 com.example.after",
+	}
+
 	if !slices.Equal(r.sent[:2], want) {
 		t.Errorf("sent %v", r.sent)
 	}
+
 	if !strings.Contains(r.warn, "Skipping "+stock) {
 		t.Errorf("warnings: %s", r.warn)
 	}
@@ -573,6 +670,7 @@ func TestASecondHomeLetsTheListDisableTheOwner(t *testing.T) {
 	if !slices.Contains(r.sent, "pm disable-user --user 0 "+stock) {
 		t.Error("the stock launcher is fair game once the new one is Home")
 	}
+
 	if strings.Contains(r.warn, "Skipping") {
 		t.Errorf("warnings: %s", r.warn)
 	}
@@ -599,6 +697,7 @@ func TestAListThatDisablesEveryHomeKeepsTheOwner(t *testing.T) {
 	if slices.Contains(r.sent, "pm disable-user --user 0 "+stock) {
 		t.Error("the app that owns Home stays enabled")
 	}
+
 	if !slices.Contains(r.sent, "pm disable-user --user 0 "+custom) {
 		t.Error("the other launcher listed is still disabled")
 	}
@@ -613,6 +712,7 @@ func TestTheSetupWizardDoesNotCountAsAnotherHome(t *testing.T) {
 	if slices.Contains(r.sent, "pm disable-user --user 0 "+stock) {
 		t.Error("the setup wizard is not a launcher to fall back on")
 	}
+
 	if !strings.Contains(r.warn, "Skipping "+stock) {
 		t.Errorf("warnings: %s", r.warn)
 	}
@@ -660,7 +760,12 @@ func TestSetupWizardSkippedWhenItOwnsWifi(t *testing.T) {
 	if slices.Contains(r.sent, "pm disable-user --user 0 "+tv.SetupWizard) {
 		t.Error("disabling it would delete the Wi-Fi network the TV is on")
 	}
-	want := []string{"pm disable-user --user 0 com.example.before", "pm disable-user --user 0 com.example.after"}
+
+	want := []string{
+		"pm disable-user --user 0 com.example.before",
+		"pm disable-user --user 0 com.example.after",
+	}
+
 	if !slices.Equal(r.sent[:2], want) || !strings.Contains(r.warn, "Skipping") {
 		t.Errorf("sent %v\n%s", r.sent, r.warn)
 	}
@@ -674,6 +779,7 @@ func TestSetupWizardDisabledWhenSystemOwnsWifi(t *testing.T) {
 		"pm disable-user --user 0 " + tv.SetupWizard,
 		"pm disable-user --user 0 com.example.after",
 	}
+
 	if !slices.Equal(r.sent[:3], want) {
 		t.Errorf("sent %v", r.sent)
 	}
@@ -684,7 +790,8 @@ func TestSetupWizardSkippedWhenDumpsysFails(t *testing.T) {
 	f.wifiFails = true
 	r := wizardWorld(t).disable(f, DisableOptions{})
 	must(t, r)
-	if slices.Contains(r.sent, "pm disable-user --user 0 "+tv.SetupWizard) || !strings.Contains(r.warn, "could not check") {
+	if slices.Contains(r.sent, "pm disable-user --user 0 "+tv.SetupWizard) ||
+		!strings.Contains(r.warn, "could not check") {
 		t.Errorf("sent %v\n%s", r.sent, r.warn)
 	}
 }
@@ -694,13 +801,16 @@ func TestSetupWizardSkippedWhenNoNetworkIsListed(t *testing.T) {
 	f.wifi = "Wi-Fi is off"
 	r := wizardWorld(t).disable(f, DisableOptions{})
 	must(t, r)
-	if slices.Contains(r.sent, "pm disable-user --user 0 "+tv.SetupWizard) || !strings.Contains(r.warn, "could not check") {
+	if slices.Contains(r.sent, "pm disable-user --user 0 "+tv.SetupWizard) ||
+		!strings.Contains(r.warn, "could not check") {
 		t.Errorf("sent %v\n%s", r.sent, r.warn)
 	}
 }
 
 func TestForceSetupWizard(t *testing.T) {
-	r := wizardWorld(t).disable(wizardTV(tv.SetupWizard+":10031"), DisableOptions{ForceSetupWizard: true})
+	r := wizardWorld(
+		t,
+	).disable(wizardTV(tv.SetupWizard+":10031"), DisableOptions{ForceSetupWizard: true})
 	must(t, r)
 	if !slices.Contains(r.sent, "pm disable-user --user 0 "+tv.SetupWizard) {
 		t.Error("--force-setupwraith did not disable it")
@@ -719,6 +829,7 @@ func TestADBSecureWarning(t *testing.T) {
 
 		{"read fails", func(f *fakeTV) { f.secureFails = true }, false},
 	}
+
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			w := newWorld(t, "com.example.one", "com.example.two")
@@ -733,7 +844,11 @@ func TestADBSecureWarning(t *testing.T) {
 				t.Error("the note points at the README answer")
 			}
 
-			want := []string{"pm disable-user --user 0 com.example.one", "pm disable-user --user 0 com.example.two", "pm list packages -d"}
+			want := []string{
+				"pm disable-user --user 0 com.example.one",
+				"pm disable-user --user 0 com.example.two",
+				"pm list packages -d",
+			}
 			if !slices.Equal(r.sent, want) {
 				t.Errorf("sent %v", r.sent)
 			}
@@ -749,7 +864,8 @@ func TestAMovedListDoesNotFallBackWhenTheTVHasARecord(t *testing.T) {
 	os.WriteFile(moved, data, 0o644)
 	var warn bytes.Buffer
 	_, err := RestoreCommands(RecordPath(w.home, moved, host), moved, "", &warn)
-	if err == nil || !strings.Contains(err.Error(), "--record") || !strings.Contains(err.Error(), w.record) {
+	if err == nil || !strings.Contains(err.Error(), "--record") ||
+		!strings.Contains(err.Error(), w.record) {
 		t.Fatalf("error = %v", err)
 	}
 

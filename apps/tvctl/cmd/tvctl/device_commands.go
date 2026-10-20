@@ -14,16 +14,25 @@ import (
 	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/tv"
 )
 
+var probeProperties = []string{
+	"ro.product.model",
+	"ro.product.device",
+	"ro.build.version.release",
+	"ro.build.version.sdk",
+	"ro.build.display.id",
+	"ro.product.manufacturer",
+	"ro.adb.secure",
+	"service.adb.tcp.port",
+}
+
 func (a *app) probe(args []string) error {
-	return a.withTV(func(s *tv.Session) error {
-		for _, prop := range []string{"ro.product.model", "ro.product.device", "ro.build.version.release",
-			"ro.build.version.sdk", "ro.build.display.id", "ro.product.manufacturer", "ro.adb.secure",
-			"service.adb.tcp.port"} {
-			value, err := s.Shell("getprop " + prop)
+	return a.withTV(func(session *tv.Session) error {
+		for _, property := range probeProperties {
+			value, err := session.Shell("getprop " + property)
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(a.stdout, "%s = %s\n", prop, strings.TrimSpace(value))
+			fmt.Fprintf(a.stdout, "%s = %s\n", property, strings.TrimSpace(value))
 		}
 		return nil
 	})
@@ -33,8 +42,9 @@ func (a *app) shell(args []string) error {
 	if len(args) == 0 {
 		return usageError("shell <command...>")
 	}
-	return a.withTV(func(s *tv.Session) error {
-		out, err := s.Shell(strings.Join(args, " "))
+
+	return a.withTV(func(session *tv.Session) error {
+		out, err := session.Shell(strings.Join(args, " "))
 		fmt.Fprint(a.stdout, out)
 		return err
 	})
@@ -45,7 +55,8 @@ func (a *app) batch(args []string) error {
 	if err != nil {
 		return err
 	}
-	return a.withTV(func(s *tv.Session) error { return tv.Batch(s, commands, a.stdout) })
+
+	return a.sendBatch(commands)
 }
 
 func readBatchCommands(input io.Reader) ([]string, error) {
@@ -62,6 +73,7 @@ func readBatchCommands(input io.Reader) ([]string, error) {
 			commands = append(commands, line)
 		}
 	}
+
 	return commands, scanner.Err()
 }
 
@@ -73,12 +85,17 @@ func (a *app) pull(args []string) error {
 	return a.copyFile(args, "pull <remote> <local>", "pulled", (*tv.Session).Pull)
 }
 
-func (a *app) copyFile(args []string, usage, done string, copy func(*tv.Session, string, string) error) error {
+func (a *app) copyFile(
+	args []string,
+	usage, done string,
+	transfer func(*tv.Session, string, string) error,
+) error {
 	if len(args) != 2 {
 		return usageError(usage)
 	}
-	return a.withTV(func(s *tv.Session) error {
-		if err := copy(s, args[0], args[1]); err != nil {
+
+	return a.withTV(func(session *tv.Session) error {
+		if err := transfer(session, args[0], args[1]); err != nil {
 			return err
 		}
 		fmt.Fprintf(a.stdout, "%s %s -> %s\n", done, args[0], args[1])
@@ -90,8 +107,9 @@ func (a *app) screencap(args []string) error {
 	if len(args) != 1 {
 		return usageError("screencap <file.png>")
 	}
-	return a.withTV(func(s *tv.Session) error {
-		png, err := s.Exec("screencap -p")
+
+	return a.withTV(func(session *tv.Session) error {
+		png, err := session.Exec("screencap -p")
 		if err != nil {
 			return err
 		}
@@ -110,12 +128,14 @@ func (a *app) closed(args []string) int {
 		fmt.Fprintln(a.stderr, err)
 		return int(netcheck.Failed)
 	}
+
 	result, message := netcheck.ADBPort(host, port)
 	if result == netcheck.Closed {
 		fmt.Fprintln(a.stdout, message)
 	} else {
 		fmt.Fprintln(a.stderr, message)
 	}
+
 	return int(result)
 }
 
@@ -123,10 +143,12 @@ func (a *app) closedTarget(args []string) (string, int, error) {
 	if len(args) > 2 || (len(args) == 1 && (args[0] == "-h" || args[0] == "--help")) {
 		return "", 0, errors.New(closedUsage)
 	}
+
 	host, port := a.host, a.port
 	if len(args) >= 1 {
 		host = args[0]
 	}
+
 	if len(args) == 2 {
 		parsed, err := strconv.Atoi(args[1])
 		if err != nil {
@@ -134,8 +156,10 @@ func (a *app) closedTarget(args []string) (string, int, error) {
 		}
 		port = parsed
 	}
+
 	if host == "" {
 		return "", 0, errors.New(closedUsage)
 	}
+
 	return host, port, nil
 }

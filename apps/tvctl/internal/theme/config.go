@@ -22,12 +22,15 @@ type configReport struct {
 
 func checkConfig(data []byte) (configReport, error) {
 	if len(data) > contract.ThemeMaxConfigBytes {
-		return configReport{}, fmt.Errorf("is %d bytes; the launcher ignores a config over %d", len(data), contract.ThemeMaxConfigBytes)
+		return configReport{}, fmt.Errorf("is %d bytes; the launcher ignores a config over %d",
+			len(data), contract.ThemeMaxConfigBytes)
 	}
+
 	var values map[string]any
 	if err := json.Unmarshal(data, &values); err != nil {
 		return configReport{}, fmt.Errorf("is not a JSON object: %v", err)
 	}
+
 	var report configReport
 	for _, name := range sortedKeys(values) {
 		key, known := contract.ConfigKeys[name]
@@ -39,6 +42,7 @@ func checkConfig(data []byte) (configReport, error) {
 			report.problems = append(report.problems, fmt.Sprintf("%s: %s", name, problem))
 		}
 	}
+
 	return report, nil
 }
 
@@ -47,6 +51,7 @@ func sortedKeys(values map[string]any) []string {
 	for name := range values {
 		names = append(names, name)
 	}
+
 	sort.Strings(names)
 	return names
 }
@@ -61,7 +66,10 @@ func valueProblem(key contract.ConfigKey, value any) string {
 		return unless(isString(value), "must be a string")
 	case contract.TypeColor:
 		text, ok := value.(string)
-		return unless(ok && colorValue.MatchString(strings.TrimSpace(text)), "must be #RRGGBB or #AARRGGBB")
+		return unless(
+			ok && colorValue.MatchString(strings.TrimSpace(text)),
+			"must be #RRGGBB or #AARRGGBB",
+		)
 	case contract.TypeDate:
 		text, ok := value.(string)
 		_, err := time.Parse("2006-01-02", strings.TrimSpace(text))
@@ -73,6 +81,7 @@ func valueProblem(key contract.ConfigKey, value any) string {
 	case contract.TypeKeycodes:
 		return unless(isListOf(value, isPositiveInteger), "must be a list of positive keycodes")
 	}
+
 	return "has a type tvctl does not know"
 }
 
@@ -81,9 +90,11 @@ func integerProblem(key contract.ConfigKey, value any) string {
 	if !ok || number != math.Trunc(number) {
 		return "must be a whole number"
 	}
+
 	if int(number) < key.Min || int(number) > key.Max {
 		return fmt.Sprintf("must be between %d and %d", key.Min, key.Max)
 	}
+
 	return ""
 }
 
@@ -91,6 +102,7 @@ func unless(ok bool, problem string) string {
 	if ok {
 		return ""
 	}
+
 	return problem
 }
 
@@ -119,10 +131,12 @@ func isListOf(value any, valid func(any) bool) bool {
 	if !ok {
 		return false
 	}
+
 	for _, item := range items {
 		if !valid(item) {
 			return false
 		}
 	}
+
 	return true
 }

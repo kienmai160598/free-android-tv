@@ -20,7 +20,7 @@ Fork of Gathin23/cleanyourtv (MIT).
 ## Commands
 
 ```bash
-make help | test | check | launcher | install     # check = what CI runs
+make help | style | test | check | launcher | install    # check = what CI runs
 TV_HOST=<ip> scripts/tvctl probe | shell <cmd> | batch | push | pull | screencap <png>
 TV_HOST=<ip> scripts/tvctl disable|restore packages/debloat-lists/<tv>/debloat.txt
 TV_HOST=<ip> make install                          # build + tvctl install --input-key-service
@@ -40,9 +40,21 @@ Build env (macOS): `JAVA_HOME=/opt/homebrew/opt/openjdk@17`,
 5. Verify every step: `input keyevent ...`, then `screencap`, and look at the image.
 6. Close ADB at the end and confirm with `tvctl closed`.
 
+## Code convention
+
+- No comments (generated-file headers excepted); names and small functions carry the meaning.
+- Names say what a thing is: `serviceStream`, `negativeInverse`, `remoteWallpaper`, never
+  `s`, `n`, `tmp`. One-letter names only for Go method receivers.
+- Related statements form a block; a blank line separates blocks that do different things
+  (after a finished `if`/`for`/`switch`, before the final `return`).
+- Lines stay within 100 characters (tabs count as 4). Long messages become named constants
+  built from short string parts; long argument lists continue on the next line.
+- DRY where it removes real duplication, SOLID: one responsibility per function and file.
+- `scripts/check-style` (part of `make test` and CI) enforces gofmt and the line limit for Go,
+  scripts, the Makefile and workflows. The launcher's Java follows the same rules.
+
 ## Rules
 
-- Code: no comments; clear names and small functions carry the meaning. DRY where it helps, SOLID.
 - A package name reaches a TV shell only after matching `^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$`.
 - Never disable the app that owns Home before another launcher owns it; never disable setupwraith
   while it owns the saved Wi-Fi network (`dumpsys wifi | grep -o 'cname=[^ ]*'`).

@@ -24,10 +24,12 @@ func (s *Session) connection() (*adb.Conn, error) {
 	if s.conn != nil {
 		return s.conn, nil
 	}
+
 	conn, err := adb.Dial(s.Host, s.Port, s.Key, s.Opts)
 	if err != nil {
 		return nil, err
 	}
+
 	s.conn = conn
 	return conn, nil
 }
@@ -45,10 +47,12 @@ func withConnection[T any](s *Session, use func(*adb.Conn) (T, error)) (T, error
 		var zero T
 		return zero, err
 	}
+
 	result, err := use(conn)
 	if err != nil {
 		s.Close()
 	}
+
 	return result, err
 }
 
@@ -64,14 +68,20 @@ func (s *Session) Pull(remote, local string) error {
 	if err := os.MkdirAll(filepath.Dir(local), 0o755); err != nil {
 		return err
 	}
+
 	file, err := os.Create(local)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-	_, err = withConnection(s, func(conn *adb.Conn) (struct{}, error) { return struct{}{}, conn.Pull(remote, file) })
+
+	_, err = withConnection(
+		s,
+		func(conn *adb.Conn) (struct{}, error) { return struct{}{}, conn.Pull(remote, file) },
+	)
 	if err != nil {
 		return err
 	}
+
 	return file.Close()
 }

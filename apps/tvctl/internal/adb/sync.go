@@ -14,29 +14,34 @@ const (
 )
 
 func (c *Conn) Push(source io.Reader, remote string, modified time.Time) error {
-	s, err := c.open("sync:")
+	syncStream, err := c.open("sync:")
 	if err != nil {
 		return err
 	}
-	defer s.Close()
-	if err := writeSyncPacket(s, "SEND", []byte(fmt.Sprintf("%s,%d", remote, regularFile))); err != nil {
+	defer syncStream.Close()
+
+	target := fmt.Sprintf("%s,%d", remote, regularFile)
+	if err := writeSyncPacket(syncStream, "SEND", []byte(target)); err != nil {
 		return err
 	}
-	if err := sendFileBlocks(s, source, min(syncBlockLimit, c.MaxData()/2)); err != nil {
-		return failureFromTV(s, err)
+
+	if err := sendFileBlocks(syncStream, source, min(syncBlockLimit, c.MaxData()/2)); err != nil {
+		return failureFromTV(syncStream, err)
 	}
-	if err := writeSyncHeader(s, "DONE", uint32(modified.Unix())); err != nil {
-		return failureFromTV(s, err)
+
+	if err := writeSyncHeader(syncStream, "DONE", uint32(modified.Unix())); err != nil {
+		return failureFromTV(syncStream, err)
 	}
-	return awaitPushResult(s, remote)
+
+	return awaitPushResult(syncStream, remote)
 }
 
-func sendFileBlocks(s *stream, source io.Reader, blockSize int) error {
+func sendFileBlocks(syncStream *stream, source io.Reader, blockSize int) error {
 	block := make([]byte, blockSize)
 	for {
-		n, err := io.ReadFull(source, block)
-		if n > 0 {
-			if err := writeSyncPacket(s, "DATA", block[:n]); err != nil {
+		read, err := io.ReadFull(source, block)
+		if read > 0 {
+			if err := writeSyncPacket(syncStream, "DATA", block[:read]); err != nil {
 				return err
 			}
 		}
@@ -49,51 +54,55 @@ func sendFileBlocks(s *stream, source io.Reader, blockSize int) error {
 	}
 }
 
-func awaitPushResult(s *stream, remote string) error {
-	id, length, err := readSyncHeader(s)
+func awaitPushResult(syncStream *stream, remote string) error {
+	id, length, err := readSyncHeader(syncStream)
 	if err != nil {
 		return err
 	}
+
 	switch id {
 	case "OKAY":
-		return writeSyncHeader(s, "QUIT", 0)
+		return writeSyncHeader(syncStream, "QUIT", 0)
 	case "FAIL":
-		return fmt.Errorf("push to %s: %s", remote, readSyncMessage(s, length))
+		return fmt.Errorf("push to %s: %s", remote, readSyncMessage(syncStream, length))
 	default:
 		return fmt.Errorf("push to %s: unexpected sync reply %q", remote, id)
 	}
 }
 
-func failureFromTV(s *stream, err error) error {
-	if id, length, readErr := readSyncHeader(s); readErr == nil && id == "FAIL" {
-		return errors.New(readSyncMessage(s, length))
+func failureFromTV(syncStream *stream, err error) error {
+	if id, length, readErr := readSyncHeader(syncStream); readErr == nil && id == "FAIL" {
+		return errors.New(readSyncMessage(syncStream, length))
 	}
+
 	return err
 }
 
 func (c *Conn) Pull(remote string, destination io.Writer) error {
-	s, err := c.open("sync:")
+	syncStream, err := c.open("sync:")
 	if err != nil {
 		return err
 	}
-	defer s.Close()
-	if err := writeSyncPacket(s, "RECV", []byte(remote)); err != nil {
+	defer syncStream.Close()
+
+	if err := writeSyncPacket(syncStream, "RECV", []byte(remote)); err != nil {
 		return err
 	}
+
 	for {
-		id, length, err := readSyncHeader(s)
+		id, length, err := readSyncHeader(syncStream)
 		if err != nil {
 			return err
 		}
 		switch id {
 		case "DATA":
-			if _, err := io.CopyN(destination, s, int64(length)); err != nil {
+			if _, err := io.CopyN(destination, syncStream, int64(length)); err != nil {
 				return err
 			}
 		case "DONE":
-			return writeSyncHeader(s, "QUIT", 0)
+			return writeSyncHeader(syncStream, "QUIT", 0)
 		case "FAIL":
-			return fmt.Errorf("pull %s: %s", remote, readSyncMessage(s, length))
+			return fmt.Errorf("pull %s: %s", remote, readSyncMessage(syncStream, length))
 		default:
 			return fmt.Errorf("pull %s: unexpected sync reply %q", remote, id)
 		}
@@ -121,6 +130,7 @@ func readSyncHeader(r io.Reader) (string, uint32, error) {
 	if _, err := io.ReadFull(r, header[:]); err != nil {
 		return "", 0, err
 	}
+
 	return string(header[:4]), binary.LittleEndian.Uint32(header[4:]), nil
 }
 

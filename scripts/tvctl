@@ -3,10 +3,22 @@ set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APP="$ROOT/apps/tvctl"
 BIN="$APP/bin/tvctl"
-if [ ! -x "$BIN" ] || { command -v go >/dev/null 2>&1 &&
-     [ -n "$(find "$APP/cmd" "$APP/internal" "$APP/go.mod" -newer "$BIN" -print 2>/dev/null | head -n 1)" ]; }; then
-  command -v go >/dev/null 2>&1 || {
-    echo "tvctl: install Go (https://go.dev/dl) or put a release binary at apps/tvctl/bin/tvctl" >&2; exit 1; }
+
+has_go() {
+  command -v go >/dev/null 2>&1
+}
+
+sources_changed() {
+  changed="$(find "$APP/cmd" "$APP/internal" "$APP/go.mod" -newer "$BIN" -print 2>/dev/null)"
+  [ -n "$changed" ]
+}
+
+if [ ! -x "$BIN" ] || { has_go && sources_changed; }; then
+  if ! has_go; then
+    echo "tvctl: install Go (https://go.dev/dl) or put a release binary at $BIN" >&2
+    exit 1
+  fi
   (cd "$APP" && go build -trimpath -ldflags=-s -o "$BIN" ./cmd/tvctl)
 fi
+
 exec "$BIN" "$@"

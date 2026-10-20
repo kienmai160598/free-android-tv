@@ -14,6 +14,7 @@ func ReadList(path string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return ParseList(path, data)
 }
 
@@ -32,11 +33,15 @@ func ParseList(path string, data []byte) ([]string, error) {
 		}
 		names = append(names, fields[0])
 	}
+
 	if len(bad) > 0 {
-		return nil, fmt.Errorf("refusing %s: not a package name:\n%s", path, strings.Join(bad, "\n"))
+		return nil, fmt.Errorf("refusing %s: not a package name:\n%s",
+			path, strings.Join(bad, "\n"))
 	}
+
 	if len(names) == 0 {
 		return nil, fmt.Errorf("%s: no package names in this list", path)
 	}
+
 	return names, nil
 }

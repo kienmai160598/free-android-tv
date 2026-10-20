@@ -9,8 +9,9 @@ import (
 	"strconv"
 )
 
-const usage = `tvctl talks to an Android TV over network ADB (Settings > Device Preferences > About: press
-Build 7 times, then Developer options > USB debugging / Network debugging).
+const usage = `tvctl talks to an Android TV over network ADB.
+On the TV: Settings > Device Preferences > About, press Build 7 times,
+then Developer options > USB debugging (and Network debugging if present).
 
 usage: tvctl [--host IP] [--port 5555] <command> [arguments]
 
@@ -21,9 +22,9 @@ usage: tvctl [--host IP] [--port 5555] <command> [arguments]
   pull <remote> <local>            copy a file from the TV
   screencap <file.png>             screenshot of what the TV shows
 
-  disable [flags] <debloat list>   disable every package in the list, guarded and recorded for undo
-      --force-home                 also disable the app that owns Home when nothing else can answer it
-      --force-setupwraith          also disable setupwraith when it may own the Wi-Fi network (Ethernet)
+  disable [flags] <debloat list>   disable every listed package, guarded and recorded for undo
+      --force-home                 also disable the Home owner when nothing else answers Home
+      --force-setupwraith          also disable setupwraith when it may own the Wi-Fi network
   restore [flags] <list> [stock launcher]
                                    put back what disable changed, from its recovery record
       --dry-run                    print the commands instead of sending them
@@ -35,7 +36,7 @@ usage: tvctl [--host IP] [--port 5555] <command> [arguments]
       --now-playing                let the Now playing widget read media sessions
   theme <folder> | theme --reset   push a theme to the launcher, or remove it
 
-  closed [ip] [port]               check that network ADB is off again: exit 0 closed, 1 open, 2 unknown
+  closed [ip] [port]               check network ADB is off again (exit 0 closed, 1 open, 2 unknown)
 
 The host and port default to $TV_HOST and $TV_PORT. The ADB key is ~/.android/adbkey, the one
 platform-tools uses, so a TV that already trusts adb is not asked again.
@@ -63,14 +64,17 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if err := global.Parse(args); err != nil {
 		return 2
 	}
+
 	if global.NArg() == 0 {
 		fmt.Fprint(stderr, usage)
 		return 2
 	}
+
 	command, rest := global.Arg(0), global.Args()[1:]
 	if command == "closed" {
 		return a.closed(rest)
 	}
+
 	handlers := map[string]func([]string) error{
 		"probe":     a.probe,
 		"shell":     a.shell,
@@ -83,11 +87,13 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		"install":   a.install,
 		"theme":     a.theme,
 	}
+
 	handler, ok := handlers[command]
 	if !ok {
 		fmt.Fprintf(stderr, "tvctl: unknown command %q\n\n%s", command, usage)
 		return 2
 	}
+
 	if err := handler(rest); err != nil {
 		var usageErr usageError
 		if errors.As(err, &usageErr) {
@@ -97,6 +103,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "tvctl %s: %v\n", command, err)
 		return 1
 	}
+
 	return 0
 }
 
@@ -112,9 +119,10 @@ type usageError string
 func (u usageError) Error() string { return string(u) }
 
 func envInt(name string, fallback int) int {
-	if n, err := strconv.Atoi(os.Getenv(name)); err == nil {
-		return n
+	if value, err := strconv.Atoi(os.Getenv(name)); err == nil {
+		return value
 	}
+
 	return fallback
 }
 

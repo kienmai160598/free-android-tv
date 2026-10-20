@@ -25,6 +25,7 @@ func LoadKey(paths ...string) (*Key, error) {
 	if len(paths) == 0 {
 		return nil, errors.New("adb: no key path")
 	}
+
 	for _, path := range paths {
 		data, err := os.ReadFile(path)
 		if errors.Is(err, os.ErrNotExist) {
@@ -39,6 +40,7 @@ func LoadKey(paths ...string) (*Key, error) {
 		}
 		return &Key{private: private, Path: path}, nil
 	}
+
 	return createKey(paths[len(paths)-1])
 }
 
@@ -47,17 +49,21 @@ func parsePrivateKey(data []byte) (*rsa.PrivateKey, error) {
 	if block == nil {
 		return nil, errors.New("not a PEM private key")
 	}
+
 	if key, err := x509.ParsePKCS1PrivateKey(block.Bytes); err == nil {
 		return key, nil
 	}
+
 	parsed, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
 		return nil, err
 	}
+
 	key, ok := parsed.(*rsa.PrivateKey)
 	if !ok {
 		return nil, errors.New("not an RSA key")
 	}
+
 	return key, nil
 }
 
@@ -66,21 +72,26 @@ func createKey(path string) (*Key, error) {
 	if err != nil {
 		return nil, err
 	}
-	der, err := x509.MarshalPKCS8PrivateKey(private)
+
+	encodedPrivate, err := x509.MarshalPKCS8PrivateKey(private)
 	if err != nil {
 		return nil, err
 	}
+
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return nil, err
 	}
+
 	key := &Key{private: private, Path: path}
-	pemData := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: der})
+	pemData := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: encodedPrivate})
 	if err := os.WriteFile(path, pemData, 0o600); err != nil {
 		return nil, err
 	}
+
 	if err := os.WriteFile(path+".pub", key.PublicKey(), 0o644); err != nil {
 		return nil, err
 	}
+
 	return key, nil
 }
 
@@ -89,43 +100,46 @@ func (k *Key) sign(token []byte) ([]byte, error) {
 }
 
 func (k *Key) PublicKey() []byte {
-	n := k.private.PublicKey.N
-	words := (n.BitLen() + 31) / 32
+	modulus := k.private.PublicKey.N
+	words := (modulus.BitLen() + 31) / 32
 
-	r32 := new(big.Int).Lsh(big.NewInt(1), 32)
-	n0inv := new(big.Int).ModInverse(new(big.Int).Mod(n, r32), r32)
-	n0inv.Sub(r32, n0inv)
+	twoToThe32 := new(big.Int).Lsh(big.NewInt(1), 32)
+	inverse := new(big.Int).ModInverse(new(big.Int).Mod(modulus, twoToThe32), twoToThe32)
+	negativeInverse := inverse.Sub(twoToThe32, inverse)
 
-	rr := new(big.Int).Lsh(big.NewInt(1), uint(64*words))
-	rr.Mod(rr, n)
+	montgomerySquare := new(big.Int).Lsh(big.NewInt(1), uint(64*words))
+	montgomerySquare.Mod(montgomerySquare, modulus)
 
-	out := make([]byte, 0, 4*(3+2*words))
-	out = binary.LittleEndian.AppendUint32(out, uint32(words))
-	out = binary.LittleEndian.AppendUint32(out, uint32(n0inv.Uint64()))
-	out = appendLittleEndianWords(out, n, words)
-	out = appendLittleEndianWords(out, rr, words)
-	out = binary.LittleEndian.AppendUint32(out, uint32(k.private.PublicKey.E))
+	androidKey := make([]byte, 0, 4*(3+2*words))
+	androidKey = binary.LittleEndian.AppendUint32(androidKey, uint32(words))
+	androidKey = binary.LittleEndian.AppendUint32(androidKey, uint32(negativeInverse.Uint64()))
+	androidKey = appendLittleEndianWords(androidKey, modulus, words)
+	androidKey = appendLittleEndianWords(androidKey, montgomerySquare, words)
+	androidKey = binary.LittleEndian.AppendUint32(androidKey, uint32(k.private.PublicKey.E))
 
-	encoded := base64.StdEncoding.EncodeToString(out)
+	encoded := base64.StdEncoding.EncodeToString(androidKey)
 	return []byte(encoded + " " + userAtHost() + "\n")
 }
 
-func appendLittleEndianWords(out []byte, value *big.Int, words int) []byte {
+func appendLittleEndianWords(buffer []byte, value *big.Int, words int) []byte {
 	bigEndian := value.FillBytes(make([]byte, 4*words))
-	for i := len(bigEndian) - 1; i >= 0; i-- {
-		out = append(out, bigEndian[i])
+	for index := len(bigEndian) - 1; index >= 0; index-- {
+		buffer = append(buffer, bigEndian[index])
 	}
-	return out
+
+	return buffer
 }
 
 func userAtHost() string {
-	name := "unknown"
-	if u, err := user.Current(); err == nil && u.Username != "" {
-		name = u.Username
+	userName := "unknown"
+	if currentUser, err := user.Current(); err == nil && currentUser.Username != "" {
+		userName = currentUser.Username
 	}
-	host, err := os.Hostname()
-	if err != nil || host == "" {
-		host = "unknown"
+
+	hostName, err := os.Hostname()
+	if err != nil || hostName == "" {
+		hostName = "unknown"
 	}
-	return name + "@" + host
+
+	return userName + "@" + hostName
 }
