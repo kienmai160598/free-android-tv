@@ -67,28 +67,8 @@
 
                 <TextView style="@style/SettingsSheetLabel" android:text="@string/settings_group_home" />
 
-                <TextView
-                    android:id="@+id/columnsLabel"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingStart="18dp"
-                    android:layout_marginBottom="6dp"
-                    android:text="@string/columns_label"
-                    android:textColor="#B3FFFFFF"
-                    android:textSize="12sp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <TextView android:id="@+id/columns4" style="@style/SettingsColumnChoice" android:text="4" />
-                    <TextView android:id="@+id/columns5" style="@style/SettingsColumnChoice" android:text="5" />
-                    <TextView android:id="@+id/columns6" style="@style/SettingsColumnChoice" android:text="6" />
-                    <TextView android:id="@+id/columns7" style="@style/SettingsColumnChoice" android:text="7" />
-                </LinearLayout>
-
-                <LinearLayout style="@style/SettingsSheetGroup" android:layout_marginTop="12dp">
+                <LinearLayout style="@style/SettingsSheetGroup">
+                    <TextView android:id="@+id/columnsChoice" style="@style/SettingsListItem" />
                     <TextView android:id="@+id/widgetsChoice" style="@style/SettingsListItem" />
                 </LinearLayout>
 
@@ -106,6 +86,7 @@
                 <TextView style="@style/SettingsSheetLabel" android:text="@string/settings_group_system" />
                 <LinearLayout style="@style/SettingsSheetGroup">
                     <TextView android:id="@+id/tvSettingsChoice" style="@style/SettingsListItem" />
+                    <TextView android:id="@+id/rebootChoice" style="@style/SettingsListItem" />
                 </LinearLayout>
 
                 <TextView style="@style/SettingsSheetLabel" android:text="@string/settings_group_about" />

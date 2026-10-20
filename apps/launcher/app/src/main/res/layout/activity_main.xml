@@ -223,7 +223,7 @@
                 <TextView
                     android:id="@+id/btnSettings"
                     style="@style/TopButton"
-                    android:text="@string/settings"
+                    android:text="@string/launcher_settings"
                     android:drawableStart="@drawable/ic_settings"
                     android:nextFocusDown="@+id/grid" />
             </LinearLayout>

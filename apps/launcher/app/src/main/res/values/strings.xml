@@ -29,12 +29,12 @@
     <string name="vpn_off">VPN off</string>
     <string name="home_settings">Choose default home</string>
     <string name="home_settings_help">Select your original home to stop using CleanYourTV as Home, or CleanYourTV to switch back. The original launcher must be enabled and your TV must provide a home picker; use the restore script first if it was disabled.</string>
-    <string name="launcher_settings">Launcher settings</string>
+    <string name="launcher_settings">Quick settings</string>
     <string name="columns_label">Apps per row</string>
     <string name="animations_state">Animations: %1$s</string>
     <string name="advanced_effects">Expressive motion</string>
     <string name="advanced_effects_state">Advanced effects: %1$s</string>
-    <string name="advanced_effects_warning">Bouncier, zoomier animations. Turn it off if the TV gets slow.</string>
+    <string name="advanced_effects_warning">Springier focus and a bigger zoom. Turn off if Home stutters.</string>
     <string name="follow_theme">Follow theme (reset on-TV choices)</string>
     <string name="follow_theme_hint">Uses the current theme or built-in layout and motion settings. Pushing or resetting a theme also clears your on-TV choices.</string>
     <string name="tv_settings">TV system settings</string>
@@ -214,4 +214,10 @@
     <string name="running_on_screen">On screen, %s</string>
     <string name="running_stop_all">Stop all</string>
     <string name="try_again">Try again</string>
+    <string name="animations_desc">Off moves focus instantly, lightest on slow TVs</string>
+    <string name="widgets_desc">Weather, air quality, lunar date and system stats</string>
+    <string name="reboot">Restart TV</string>
+    <string name="reboot_desc">Needs network debugging on</string>
+    <string name="reboot_confirm">Restart the TV now?</string>
+    <string name="reboot_action">Restart</string>
 </resources>

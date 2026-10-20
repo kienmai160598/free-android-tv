@@ -6,6 +6,7 @@ import android.view.inputmethod.EditorInfo;
 import android.view.WindowManager;
 import android.view.Window;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.graphics.drawable.GradientDrawable;
 import android.app.Dialog;
 import android.content.ActivityNotFoundException;
@@ -31,13 +32,18 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 /**
  * Remote-friendly settings owned by the launcher, as a side sheet over Home: grouped lists under group
  * labels (Home, You, Motion, System, About), each row with its icon. System settings stay one row away.
  */
 public final class LauncherSettingsActivity extends Activity {
     private SharedPreferences choices;
-    private final TextView[] columnChoices = new TextView[4];
+    private static final int[] COLUMN_OPTIONS = {4, 5, 6, 7};
+    private TextView columnsChoice;
     private TextView animationsChoice;
     private TextView advancedChoice;
     private M3Switch animationsSwitch;
@@ -46,6 +52,7 @@ public final class LauncherSettingsActivity extends Activity {
     private TextView nameChoice;
     private TextView widgetsChoice;
     private TextView tvSettingsChoice;
+    private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private SideSheet sideSheet;
     private Palette palette;
     /** Google TV's own home screen, which tvctl turns off when this launcher takes over. */
@@ -69,25 +76,9 @@ public final class LauncherSettingsActivity extends Activity {
         animations = config.animations;
         advancedEffects = config.animations && config.advancedEffects;
 
-        int[] ids = {R.id.columns4, R.id.columns5, R.id.columns6, R.id.columns7};
-        for (int i = 0; i < ids.length; i++) {
-            final int value = i + 4;
-            columnChoices[i] = findViewById(ids[i]);
-            columnChoices[i].setOnClickListener(v -> {
-                if (columns == value) return;
-                columns = value;
-                choices.edit().putInt("columns", value).apply();
-                setResult(RESULT_OK);
-                refresh();
-            });
-        }
-        // Keep the numeric choices increasing in the Hebrew reading direction. Reorder the
-        // actual views so D-pad focus follows their positions without changing the saved values.
-        if (getResources().getBoolean(R.bool.rtl_app_grid)) {
-            LinearLayout row = (LinearLayout) columnChoices[0].getParent();
-            row.removeAllViews();
-            for (int i = columnChoices.length - 1; i >= 0; i--) row.addView(columnChoices[i]);
-        }
+        columnsChoice = findViewById(R.id.columnsChoice);
+        columnsChoice.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(R.drawable.ic_grid_view), null, null, null);
+        columnsChoice.setOnClickListener(v -> chooseColumns(config));
         animationsChoice = findViewById(R.id.animationsChoice);
         animationsChoice.setOnClickListener(v -> {
             animations = !animations;
@@ -109,12 +100,17 @@ public final class LauncherSettingsActivity extends Activity {
         tvSettingsChoice.setText(getString(R.string.tv_settings));
         tvSettingsChoice.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(R.drawable.ic_settings), null,
                 icon(R.drawable.ic_open_in_new), null);
+        TextView rebootChoice = findViewById(R.id.rebootChoice);
+        rebootChoice.setText(item(getString(R.string.reboot), getString(R.string.reboot_desc)));
+        rebootChoice.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(R.drawable.ic_refresh), null, null, null);
+        rebootChoice.setOnClickListener(v -> confirmReboot(config));
+
         nameChoice = findViewById(R.id.nameChoice);
         nameChoice.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(R.drawable.ic_person), null, null, null);
         showName();
         nameChoice.setOnClickListener(v -> editName(config));
         widgetsChoice = findViewById(R.id.widgetsChoice);
-        widgetsChoice.setText(getString(R.string.widgets));
+        widgetsChoice.setText(item(getString(R.string.widgets), getString(R.string.widgets_desc)));
         boolean widgetsDefault = getResources().getBoolean(R.bool.widgets);
         widgetsSwitch = new M3Switch(density, palette, config.animations);
         widgetsSwitch.setChecked(choices.getBoolean(WidgetShelf.PREF_KEY, widgetsDefault));
@@ -139,7 +135,33 @@ public final class LauncherSettingsActivity extends Activity {
         sideSheet = new SideSheet(this, scrim, sheet, config);
         scrim.setOnClickListener(v -> sideSheet.close());
         sideSheet.slideIn();
-        columnChoices[Math.max(0, Math.min(columns - 4, 3))].requestFocus();
+        columnsChoice.requestFocus();
+    }
+
+    private boolean confirmKeyPressedHere;
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (isConfirmKey(event.getKeyCode())) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                confirmKeyPressedHere = true;
+            } else if (event.getAction() == KeyEvent.ACTION_UP && !confirmKeyPressedHere) {
+                return true;
+            }
+        }
+        return super.dispatchKeyEvent(event);
+    }
+
+    private static boolean isConfirmKey(int keyCode) {
+        return keyCode == KeyEvent.KEYCODE_DPAD_CENTER
+                || keyCode == KeyEvent.KEYCODE_ENTER
+                || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER;
+    }
+
+    @Override
+    protected void onDestroy() {
+        worker.shutdown();
+        super.onDestroy();
     }
 
     @Override
@@ -210,21 +232,10 @@ public final class LauncherSettingsActivity extends Activity {
         nameChoice.setText(item(getString(R.string.your_name), name.isEmpty() ? getString(R.string.your_name_none) : name));
     }
 
-    /** A small M3 dialog with one outlined text field; empty clears the name (the greeting alone). */
     private void editName(Config config) {
         Palette p = Palette.currentOrBaseline();
         float d = getResources().getDisplayMetrics().density;
-        LinearLayout panel = new LinearLayout(this);
-        panel.setOrientation(LinearLayout.VERTICAL);
-        panel.setTag("m3:panel");
-        int pad = (int) (24 * d);
-        panel.setPadding(pad, pad, pad, pad);
-
-        TextView title = new TextView(this);
-        title.setText(R.string.your_name);
-        title.setTextSize(24f);
-        title.setTextColor(p.onSurface);
-        panel.addView(title);
+        LinearLayout panel = dialogPanel(R.string.your_name, p, d);
 
         EditText field = new EditText(this);
         field.setSingleLine(true);
@@ -239,33 +250,26 @@ public final class LauncherSettingsActivity extends Activity {
         box.setCornerRadius(Shapes.EXTRA_SMALL * d);
         box.setStroke((int) (2 * d), p.primary);
         field.setBackground(box);
-        int fp = (int) (16 * d);
-        field.setPadding(fp, fp, fp, fp);
-        LinearLayout.LayoutParams flp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        flp.topMargin = (int) (16 * d);
-        panel.addView(field, flp);
+        int fieldPadding = (int) (16 * d);
+        field.setPadding(fieldPadding, fieldPadding, fieldPadding, fieldPadding);
+        LinearLayout.LayoutParams fieldLayout = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        fieldLayout.topMargin = (int) (16 * d);
+        panel.addView(field, fieldLayout);
 
-        LinearLayout buttons = new LinearLayout(this);
-        buttons.setGravity(Gravity.END);
-        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        blp.topMargin = (int) (24 * d);
-        panel.addView(buttons, blp);
+        LinearLayout buttons = dialogButtonRow(panel, d);
         TextView cancel = dialogButton(android.R.string.cancel, d);
         TextView save = dialogButton(R.string.save, d);
         buttons.addView(cancel);
         buttons.addView(save);
         ((LinearLayout.LayoutParams) save.getLayoutParams()).setMarginStart((int) (8 * d));
 
-        Dialog dialog = new Dialog(this);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(panel);
-        M3Skin.apply(panel, p, config.animations, config.reducedMotion);
-        Window w = dialog.getWindow();
-        if (w != null) {
-            w.setBackgroundDrawable(new ColorDrawable(0));
-            w.setLayout((int) (520 * d), ViewGroup.LayoutParams.WRAP_CONTENT);
-            w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+        Dialog dialog = showDialog(panel, p, config, d);
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
         }
+
         Runnable commit = () -> {
             choices.edit().putString(NAME_KEY, field.getText().toString().trim()).apply();
             showName();
@@ -278,8 +282,138 @@ public final class LauncherSettingsActivity extends Activity {
             commit.run();
             return true;
         });
-        dialog.show();
         field.requestFocus();
+    }
+
+    private void chooseColumns(Config config) {
+        Palette p = Palette.currentOrBaseline();
+        float d = getResources().getDisplayMetrics().density;
+        LinearLayout panel = dialogPanel(R.string.columns_label, p, d);
+
+        LinearLayout options = new LinearLayout(this);
+        options.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams optionsLayout = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        optionsLayout.topMargin = (int) (16 * d);
+        panel.addView(options, optionsLayout);
+
+        TextView current = null;
+        TextView[] rows = new TextView[COLUMN_OPTIONS.length];
+        for (int index = 0; index < COLUMN_OPTIONS.length; index++) {
+            int value = COLUMN_OPTIONS[index];
+            TextView row = new TextView(this, null, 0, R.style.SettingsListItem);
+            row.setText(String.valueOf(value));
+            row.setFocusable(true);
+            row.setClickable(true);
+            int radio = value == columns ? R.drawable.ic_radio_on : R.drawable.ic_radio_off;
+            row.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(radio), null, null, null);
+            options.addView(row, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            rows[index] = row;
+            if (value == columns) current = row;
+        }
+
+        Dialog dialog = showDialog(panel, p, config, d);
+        for (int index = 0; index < rows.length; index++) {
+            int value = COLUMN_OPTIONS[index];
+            rows[index].setOnClickListener(v -> {
+                setColumns(value);
+                dialog.dismiss();
+            });
+        }
+        (current != null ? current : rows[0]).requestFocus();
+    }
+
+    private void confirmReboot(Config config) {
+        Palette p = Palette.currentOrBaseline();
+        float d = getResources().getDisplayMetrics().density;
+        LinearLayout panel = dialogPanel(R.string.reboot_confirm, p, d);
+
+        LinearLayout buttons = dialogButtonRow(panel, d);
+        TextView cancel = dialogButton(android.R.string.cancel, d);
+        TextView restart = dialogButton(R.string.reboot_action, d);
+        buttons.addView(cancel);
+        buttons.addView(restart);
+        ((LinearLayout.LayoutParams) restart.getLayoutParams()).setMarginStart((int) (8 * d));
+
+        Dialog dialog = showDialog(panel, p, config, d);
+        cancel.setOnClickListener(v -> dialog.dismiss());
+        restart.setOnClickListener(v -> {
+            dialog.dismiss();
+            reboot();
+        });
+        cancel.requestFocus();
+    }
+
+    private void reboot() {
+        LocalAdb adb = new LocalAdb(this);
+        worker.execute(() -> {
+            int problem;
+            try {
+                adb.shell("reboot");
+                return;
+            } catch (LocalAdb.OffException e) {
+                problem = R.string.running_off;
+            } catch (LocalAdb.NotAllowedException e) {
+                problem = R.string.running_denied;
+            } catch (IOException e) {
+                return;
+            }
+            int message = problem;
+            runOnUiThread(() -> Toast.makeText(this, message, Toast.LENGTH_LONG).show());
+        });
+    }
+
+    private void setColumns(int value) {
+        if (columns == value) return;
+        columns = value;
+        choices.edit().putInt("columns", value).apply();
+        setResult(RESULT_OK);
+        refresh();
+    }
+
+    private LinearLayout dialogButtonRow(LinearLayout panel, float d) {
+        LinearLayout buttons = new LinearLayout(this);
+        buttons.setGravity(Gravity.END);
+        buttons.setClipChildren(false);
+        buttons.setClipToPadding(false);
+        LinearLayout.LayoutParams buttonsLayout = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        buttonsLayout.topMargin = (int) (24 * d);
+        panel.addView(buttons, buttonsLayout);
+        return buttons;
+    }
+
+    private LinearLayout dialogPanel(int titleText, Palette p, float d) {
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setTag("m3:panel");
+        panel.setClipChildren(false);
+        panel.setClipToPadding(false);
+        int padding = (int) (24 * d);
+        panel.setPadding(padding, padding, padding, padding);
+
+        TextView title = new TextView(this);
+        title.setText(titleText);
+        title.setTextSize(22f);
+        title.setTextColor(p.onSurface);
+        panel.addView(title);
+        return panel;
+    }
+
+    private Dialog showDialog(LinearLayout panel, Palette p, Config config, float d) {
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(panel);
+        M3Skin.apply(panel, p, config.animations, config.reducedMotion);
+
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(new ColorDrawable(0));
+            window.setLayout((int) (440 * d), ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+        dialog.show();
+        return dialog;
     }
 
     private TextView dialogButton(int text, float d) {
@@ -304,11 +438,9 @@ public final class LauncherSettingsActivity extends Activity {
     }
 
     private void refresh() {
-        for (int i = 0; i < columnChoices.length; i++) {
-            columnChoices[i].setSelected(columns == i + 4);
-        }
-        widgetsChoice.setNextFocusUpId(columnChoices[Math.max(0, Math.min(columns - 4, 3))].getId());
-        animationsChoice.setText(item(title(getString(R.string.animations_state, "")), null));
+        columnsChoice.setText(item(getString(R.string.columns_label), String.valueOf(columns)));
+        animationsChoice.setText(item(title(getString(R.string.animations_state, "")),
+                getString(R.string.animations_desc)));
         animationsSwitch.setChecked(animations);
         advancedChoice.setText(item(getString(R.string.advanced_effects), getString(R.string.advanced_effects_warning)));
         advancedSwitch.setChecked(advancedEffects);

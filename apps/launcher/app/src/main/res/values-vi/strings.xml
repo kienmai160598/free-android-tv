@@ -26,12 +26,12 @@
     <string name="vpn_off">VPN tắt</string>
     <string name="home_settings">Chọn màn hình chính mặc định</string>
     <string name="home_settings_help">Chọn màn hình chính gốc để thôi dùng CleanYourTV, hoặc chọn CleanYourTV để dùng lại. Launcher gốc phải đang bật và TV phải có mục chọn màn hình chính; nếu launcher gốc đã bị tắt, hãy chạy script khôi phục trước.</string>
-    <string name="launcher_settings">Cài đặt launcher</string>
+    <string name="launcher_settings">Cài đặt nhanh</string>
     <string name="columns_label">Số ứng dụng mỗi hàng</string>
     <string name="animations_state">Hiệu ứng: %1$s</string>
     <string name="advanced_effects">Chuyển động sinh động</string>
     <string name="advanced_effects_state">Hiệu ứng nâng cao: %1$s</string>
-    <string name="advanced_effects_warning">Hiệu ứng nảy và phóng to vui mắt hơn. Tắt đi nếu TV bị chậm.</string>
+    <string name="advanced_effects_warning">Focus nảy và phóng to hơn. Tắt nếu màn hình chính bị giật.</string>
     <string name="follow_theme">Theo theme (xóa lựa chọn trên TV)</string>
     <string name="follow_theme_hint">Dùng bố cục và hiệu ứng của theme hiện tại hoặc mặc định. Đẩy hoặc đặt lại theme cũng xóa các lựa chọn bạn đã chọn trên TV.</string>
     <string name="tv_settings">Cài đặt hệ thống TV</string>
@@ -192,4 +192,10 @@
     <string name="running_on_screen">Đang xem, %s</string>
     <string name="running_stop_all">Dừng tất cả</string>
     <string name="try_again">Thử lại</string>
+    <string name="animations_desc">Tắt để focus chuyển ngay, nhẹ nhất cho TV yếu</string>
+    <string name="widgets_desc">Thời tiết, chất lượng không khí, lịch âm và thông số máy</string>
+    <string name="reboot">Khởi động lại TV</string>
+    <string name="reboot_desc">Cần bật gỡ lỗi qua mạng</string>
+    <string name="reboot_confirm">Khởi động lại TV ngay?</string>
+    <string name="reboot_action">Khởi động lại</string>
 </resources>
