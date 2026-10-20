@@ -307,8 +307,7 @@ public final class LauncherSettingsActivity extends Activity {
         for (int i = 0; i < columnChoices.length; i++) {
             columnChoices[i].setSelected(columns == i + 4);
         }
-        // Up from the first list item goes back to the current choice, not whichever is geometrically above.
-        animationsChoice.setNextFocusUpId(columnChoices[Math.max(0, Math.min(columns - 4, 3))].getId());
+        widgetsChoice.setNextFocusUpId(columnChoices[Math.max(0, Math.min(columns - 4, 3))].getId());
         animationsChoice.setText(item(title(getString(R.string.animations_state, "")), null));
         animationsSwitch.setChecked(animations);
         advancedChoice.setText(item(getString(R.string.advanced_effects), getString(R.string.advanced_effects_warning)));
