@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Publish tvctl
+    runs-on: ${{ vars.RUNNER || 'ubuntu-latest' }}
+    env:
+      CGO_ENABLED: "0"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-go
+
+      - run: go test ./...
+
+      - name: Cross-compile
+        run: |
+          for target in darwin/arm64 darwin/amd64 linux/amd64 linux/arm64 windows/amd64 windows/arm64; do
+            os=${target%/*}; arch=${target#*/}; ext=""; [ "$os" = windows ] && ext=.exe
+            GOOS=$os GOARCH=$arch go build -trimpath -ldflags="-s -w" -o "dist/tvctl-$os-$arch$ext" ./cmd/tvctl
+          done
+          (cd dist && sha256sum * > SHA256SUMS)
+
+      - run: gh release create "$GITHUB_REF_NAME" dist/* --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}

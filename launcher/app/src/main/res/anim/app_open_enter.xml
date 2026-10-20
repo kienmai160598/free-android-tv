@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- An app opening from Home: its window fades in over Home. The system compositor runs it, so it
+     stays smooth however long the app takes to draw its first frame. -->
+<alpha xmlns:android="http://schemas.android.com/apk/res/android"
+    android:interpolator="@interpolator/emphasized_decelerate"
+    android:duration="200"
+    android:fromAlpha="0.0" android:toAlpha="1.0" />

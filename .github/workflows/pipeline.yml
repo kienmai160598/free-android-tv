@@ -1,0 +1,45 @@
+name: Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  affected:
+    name: Affected parts
+    runs-on: ${{ vars.RUNNER || 'ubuntu-latest' }}
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      tvctl: ${{ steps.filter.outputs.tvctl }}
+      launcher: ${{ steps.filter.outputs.launcher }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          filters: .github/app-paths.yml
+
+  tvctl:
+    name: tvctl
+    needs: affected
+    uses: ./.github/workflows/tvctl.yml
+    with:
+      changed: ${{ needs.affected.outputs.tvctl == 'true' }}
+
+  launcher:
+    name: Launcher
+    needs: affected
+    uses: ./.github/workflows/launcher.yml
+    with:
+      changed: ${{ needs.affected.outputs.launcher == 'true' }}

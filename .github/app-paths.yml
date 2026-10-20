@@ -1,0 +1,14 @@
+shared: &shared
+  - .github/**
+
+tvctl:
+  - *shared
+  - go.mod
+  - cmd/**
+  - internal/**
+  - examples/**
+  - themes/**
+
+launcher:
+  - *shared
+  - launcher/**

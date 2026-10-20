@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+BIN="$ROOT/tools/bin/tvctl"
+if [ ! -x "$BIN" ] || { command -v go >/dev/null 2>&1 &&
+     [ -n "$(find "$ROOT/cmd" "$ROOT/internal" "$ROOT/go.mod" -newer "$BIN" -print 2>/dev/null | head -n 1)" ]; }; then
+  command -v go >/dev/null 2>&1 || {
+    echo "tvctl: install Go (https://go.dev/dl) or put a release binary at tools/bin/tvctl" >&2; exit 1; }
+  (cd "$ROOT" && go build -trimpath -ldflags=-s -o "$BIN" ./cmd/tvctl)
+fi
+exec "$BIN" "$@"

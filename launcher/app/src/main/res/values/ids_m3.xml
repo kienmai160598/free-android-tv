@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- View tag holding a view's Expressive control (Expressive.of). -->
+    <item name="expressive" type="id" />
+    <!-- View tag: a text's M3 role as first read from its layout colour (M3Skin). -->
+    <item name="m3_text_role" type="id" />
+    <!-- Panel tag: its MenuHighlight; row tag: TRUE for a row the highlight follows. -->
+    <item name="m3_menu_highlight" type="id" />
+    <!-- Text or icon tag: its {rest, focused} colours from the skin, kept after MenuHighlight paints it. -->
+    <item name="m3_menu_colors" type="id" />
+</resources>

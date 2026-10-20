@@ -1,0 +1,43 @@
+name: tvctl
+
+on:
+  workflow_call:
+    inputs:
+      changed: { type: boolean, required: true }
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate
+    if: inputs.changed
+    runs-on: ${{ vars.RUNNER || 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-go
+
+      - name: Go format
+        run: test -z "$(gofmt -l .)"
+
+      - run: go vet ./... && go test ./...
+
+  build:
+    name: Build
+    needs: validate
+    runs-on: ${{ vars.RUNNER || 'ubuntu-latest' }}
+    strategy:
+      matrix:
+        target: [darwin/arm64, darwin/amd64, linux/amd64, linux/arm64, windows/amd64, windows/arm64]
+    env:
+      CGO_ENABLED: "0"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-go
+
+      - name: Cross-compile
+        run: |
+          os=${TARGET%/*}; arch=${TARGET#*/}; ext=""; [ "$os" = windows ] && ext=.exe
+          GOOS=$os GOARCH=$arch go build -trimpath -ldflags="-s -w" -o "dist/tvctl-$os-$arch$ext" ./cmd/tvctl
+        env:
+          TARGET: ${{ matrix.target }}

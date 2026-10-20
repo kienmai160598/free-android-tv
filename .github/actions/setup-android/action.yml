@@ -1,0 +1,14 @@
+name: Setup Android
+description: JDK 17, Android SDK platform 34 and Gradle for the launcher
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: "17"
+    - uses: android-actions/setup-android@v3
+      with:
+        packages: platforms;android-34 build-tools;34.0.0
+    - uses: gradle/actions/setup-gradle@v4

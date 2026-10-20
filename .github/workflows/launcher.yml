@@ -1,0 +1,49 @@
+name: Launcher
+
+on:
+  workflow_call:
+    inputs:
+      changed: { type: boolean, required: true }
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate
+    if: inputs.changed
+    runs-on: ${{ vars.RUNNER || 'ubuntu-latest' }}
+    defaults:
+      run:
+        working-directory: launcher
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-android
+
+      - run: chmod +x gradlew && ./gradlew --no-daemon testReleaseUnitTest lintRelease
+
+  build:
+    name: Build
+    needs: validate
+    runs-on: ${{ vars.RUNNER || 'ubuntu-latest' }}
+    defaults:
+      run:
+        working-directory: launcher
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-android
+
+      - run: chmod +x gradlew && ./gradlew --no-daemon assembleRelease
+
+      - name: APK size
+        run: |
+          size=$(stat -c %s app/build/outputs/apk/release/app-release.apk)
+          echo "release APK: $((size / 1024)) KB"
+          test "$size" -lt 716800
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: launcher-apk
+          path: launcher/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 7

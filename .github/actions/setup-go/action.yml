@@ -1,0 +1,11 @@
+name: Setup Go
+description: Install the Go version from go.mod; the build cache only on GitHub-hosted runners
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-go@v7
+      with:
+        go-version-file: go.mod
+        cache: ${{ runner.environment == 'github-hosted' }}
+        cache-dependency-path: go.mod
