@@ -18,13 +18,16 @@
 #   Mi Video, the voice assistant and every casting receiver but AirPlay (in com.xiaomi.mitv.smartshare).
 #   The app store and com.mitv.videoplayer (USB files) stay.
 # - com.xiaomi.mitv.remotecontroller.service looped at 100-190% CPU and flooded logd (~490 MB in
-#   30 min): its relay host is gone, so it is disabled below. ES File Explorer runs DLNA and a WebView
-#   in the background: cmd appops set com.estrongs.android.pop RUN_IN_BACKGROUND ignore.
+#   30 min): its relay host is gone, so it is disabled below. ES File Explorer ran DLNA and a WebView
+#   in the background; it is replaced by Material Files (F-Droid, me.zhanghai.android.files).
 # - Home stays com.mitv.tvhome: set-home-activity succeeds but resolution ignores it, and with
 #   com.mitv.tvhome disabled Home falls to com.android.tv.settings/.system.FallbackHome.
 # - km-launcher follows the system's night mode, which this firmware has no setting for:
 #   cmd uimode night yes|no|auto. Auto needs a location for sunset and the TV has none, so it
 #   stays in day mode.
+# - The remote has no Input button; its Menu (three lines, KEYCODE_MENU) opens Home's Inputs menu when
+#   Launcher settings > Menu button opens Inputs is on. Inputs switch through Xiaomi's player
+#   (com.xiaomi.mitv.tvplayer EXTSRC_PLAY, extra input: HDMI1-3 = 23-25, AV = 2).
 # - The time zone ships as Asia/Shanghai, an hour ahead in Vietnam. Set the one the IP locates
 #   (get.geojs.io/v1/ip/geo.json "timezone"): service call alarm 3 s16 Asia/Ho_Chi_Minh
 # - Picture: Settings -> Image settings -> Display model is kept per source; "Picture" is the vivid
@@ -57,7 +60,7 @@ com.xiaomi.screenrecorder
 com.xiaomi.mitv.smartpanel              # smart home panel
 com.xiaomi.mitv.calendar
 com.xiaomi.tweather                     # CN weather
-com.mitv.screensaver                    # Xiaomi screensaver; km-launcher ClockDream instead (screensaver_components, screen_off_timeout 600000)
+com.mitv.screensaver                    # Xiaomi screensaver; ClockDream runs on screen_off_timeout (Launcher settings)
 com.xiaomi.mitv.healthdiagnosis        # TV self-diagnosis
 com.xiaomi.mitv.legal.webview           # terms and privacy viewer
 com.android.printspooler                # printing
