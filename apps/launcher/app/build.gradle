@@ -10,9 +10,9 @@ android {
         applicationId 'com.gathin.tvhome'
         minSdk 26
         targetSdk 34
-        versionCode 6
+        versionCode 7
         // A release sets it from its tag (-PkmVersion=1.1.0); the code stays put, so a local build still installs over it.
-        versionName findProperty('kmVersion') ?: '1.0.1'
+        versionName findProperty('kmVersion') ?: '1.0.2'
         // English and Vietnamese only: other locales were removed, and this keeps library strings out too.
         resourceConfigurations += ['en', 'vi']
     }
