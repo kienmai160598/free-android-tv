@@ -17,6 +17,8 @@
 - **Launcher:** a dock and app grid, widgets for weather, air quality, the system and the lunar
   calendar, a sky that follows the weather, and a clock screensaver.
 - **Remote:** the Input, Netflix, YouTube and gear buttons keep working once the stock home is gone.
+- **Network:** the launcher asks Open-Meteo for the weather and air quality, finds the place from the IP
+  (ipwho.is or geojs.io), and runs a Cloudflare speed test only when you ask. Nothing else leaves the TV.
 
 ## Quick start
 
