@@ -31,7 +31,7 @@
     <string name="animations_state">Hiệu ứng: %1$s</string>
     <string name="advanced_effects">Chuyển động sinh động</string>
     <string name="advanced_effects_state">Hiệu ứng nâng cao: %1$s</string>
-    <string name="advanced_effects_warning">Focus nảy và phóng to hơn. Tắt nếu màn hình chính bị giật.</string>
+    <string name="advanced_effects_warning">Focus nảy, phóng to hơn và hình nền biến hình. Tắt nếu màn hình chính bị giật.</string>
     <string name="follow_theme">Theo theme (xóa lựa chọn trên TV)</string>
     <string name="follow_theme_hint">Dùng bố cục và hiệu ứng của theme hiện tại hoặc mặc định. Đẩy hoặc đặt lại theme cũng xóa các lựa chọn bạn đã chọn trên TV.</string>
     <string name="tv_settings">Cài đặt hệ thống TV</string>

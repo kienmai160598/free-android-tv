@@ -34,7 +34,7 @@
     <string name="animations_state">Animations: %1$s</string>
     <string name="advanced_effects">Expressive motion</string>
     <string name="advanced_effects_state">Advanced effects: %1$s</string>
-    <string name="advanced_effects_warning">Springier focus and a bigger zoom. Turn off if Home stutters.</string>
+    <string name="advanced_effects_warning">Springier focus, a bigger zoom and morphing backdrop shapes. Turn off if Home stutters.</string>
     <string name="follow_theme">Follow theme (reset on-TV choices)</string>
     <string name="follow_theme_hint">Uses the current theme or built-in layout and motion settings. Pushing or resetting a theme also clears your on-TV choices.</string>
     <string name="tv_settings">TV system settings</string>
