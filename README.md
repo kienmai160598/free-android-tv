@@ -1,81 +1,69 @@
 <div align="center">
 
-# 📺 freeTV
+<h1>📺 freeTV</h1>
 
-**Debloat your Android TV. Give it a Material 3 Expressive home screen.**
+<p><b>A cleaner Android TV. No root.</b><br>
+Debloat it over Wi-Fi and give it a Material 3 Expressive home screen.</p>
 
-No root · nothing uninstalled · everything undoable
+<p>
+<a href="#quick-start">Quick start</a> ·
+<a href="packages/debloat-lists/">Supported TVs</a> ·
+<a href="docs/prompt.md">Agent prompt</a>
+</p>
 
-[![Pipeline](https://github.com/kienmai160598/freeTV/actions/workflows/pipeline.yml/badge.svg)](https://github.com/kienmai160598/freeTV/actions/workflows/pipeline.yml)
-![Root](https://img.shields.io/badge/root-not_needed-7c4dff)
-![TV models](https://img.shields.io/badge/TV_models-108-00bfa5)
-![Android](https://img.shields.io/badge/Android_TV-8.0%2B-3ddc84?logo=android&logoColor=white)
-![Licence](https://img.shields.io/badge/licence-MIT-ff6d00)
-
-<img src="docs/media/home.gif" alt="km-launcher on a TCL Google TV: the dock, widgets and the header" width="880">
+<img src="docs/media/home.gif" alt="km-launcher on a TCL Google TV: the dock, widgets and header" width="880">
 
 </div>
 
-## 📸 Screens
+<br>
 
-| | |
-|---|---|
-| ![Home](docs/media/home.png) | ![Rows scrolling under the header](docs/media/scrolled.png) |
-| 🏠 Home: widgets over the dock | ⬇️ Rows fade out under the header |
-| ![Launcher settings](docs/media/settings.png) | ![Clock screensaver](docs/media/dream.png) |
-| ⚙️ Settings on the TV | 🕐 Clock screensaver |
+**Debloat.** Lists for 108 TV models switch off telemetry, ads and preloads. Nothing is uninstalled,
+and every change can be put back.
 
-## ✨ What you get
+**Launcher.** A dock and app grid, widgets for weather, air quality, the system and the lunar
+calendar, a sky that follows the weather, and a clock screensaver.
 
-| | |
-|---|---|
-| 🧹 **Debloat** | Telemetry, ads and preloads off, with a record to put them back |
-| 🏠 **km-launcher** | Dock, app grid, Edit Home, themes |
-| 🌤️ **Widgets** | Weather, air quality, system info, calendar |
-| 🎨 **Backdrops** | Moving shapes, a sky that follows the weather, wallpaper |
-| 🕐 **Screensaver** | Clock in four styles |
-| 🎛️ **Remote** | Inputs menu, Netflix / YouTube / gear buttons working again |
+**Remote.** The Input, Netflix, YouTube and gear buttons keep working once the stock home is gone.
 
-## 🚀 Quick start
+## Quick start
 
-**1. On the TV:** About → press **Build** 7× → Developer options → **USB debugging** on.
-
-**2a. 🤖 Let an agent do it:** paste into Claude Code, Codex or similar:
+Turn on **USB debugging** on the TV (About → press Build 7 times → Developer options), then either
+paste this into a coding agent such as Claude Code or Codex:
 
 ```text
 Read https://github.com/kienmai160598/freeTV/blob/main/docs/prompt.md and follow it.
 My TV: <brand and model, or "find out">. Its IP: <ip, or "find it on my network">.
 ```
 
-**2b. 🛠️ Or by hand** (Go 1.27+, JDK 17, Android SDK 34):
+or run it yourself (Go 1.27+, JDK 17, Android SDK 34):
 
 ```bash
 git clone https://github.com/kienmai160598/freeTV && cd freeTV
 export TV_HOST=192.168.1.50
-scripts/tvctl probe                                              # accept on the TV
+scripts/tvctl probe                                   # accept the prompt on the TV
 scripts/tvctl disable packages/debloat-lists/<your-tv>/debloat.txt
 make install
 ```
 
+Undo with `scripts/tvctl restore packages/debloat-lists/<your-tv>/debloat.txt`. Change the look with
+`scripts/tvctl theme packages/themes/<theme>`. On Windows, use `scripts\tvctl.ps1`. When you are done,
+turn debugging off and reboot the TV.
+
+## Screens
+
 | | |
 |---|---|
-| ↩️ **Undo** | `scripts/tvctl restore packages/debloat-lists/<your-tv>/debloat.txt` |
-| 🎨 **Theme** | `scripts/tvctl theme packages/themes/<theme>` |
-| 🔒 **Close ADB** | debugging off, reboot, `scripts/tvctl closed` |
-| 🪟 **Windows** | `scripts\tvctl.ps1`, `apps\launcher\build-and-install.ps1 -TvHost <ip>` |
+| ![Home](docs/media/home.png) | ![Rows scrolling under the header](docs/media/scrolled.png) |
+| ![Launcher settings](docs/media/settings.png) | ![Clock screensaver](docs/media/dream.png) |
 
-## 🧩 Inside
+## Under the hood
 
-| | | |
-|---|---|---|
-| `apps/tvctl` | Go CLI with its own ADB client | ![Go](https://img.shields.io/badge/Go-00ADD8?logo=go&logoColor=white) |
-| `apps/launcher` | km-launcher, English + Vietnamese | ![Java](https://img.shields.io/badge/Java_17-E76F00?logo=openjdk&logoColor=white) |
-| `packages/` | Debloat lists, themes, shared contract | ![JSON](https://img.shields.io/badge/JSON-5e5e5e?logo=json&logoColor=white) |
+`apps/tvctl` is a Go CLI with its own ADB client. `apps/launcher` is km-launcher, in Java. The
+debloat lists and themes live in `packages/`. Conventions are in [`AGENTS.md`](AGENTS.md), and
+`make check` runs what CI runs.
 
-Runs on 🍎 macOS · 🐧 Linux · 🪟 Windows. Developers: [`AGENTS.md`](AGENTS.md), `make check`.
+<br>
 
-## 💜 Credits
-
-Forked from [**Gathin23/cleanyourtv**](https://github.com/Gathin23/cleanyourtv). The debloat lists
-come from Gathin and the cleanyourtv contributors. [MIT](LICENSE); Google Sans Flex under the
-SIL OFL, Material Color Utilities under Apache 2.0.
+<div align="center">
+<sub>MIT · forked from <a href="https://github.com/Gathin23/cleanyourtv">Gathin23/cleanyourtv</a>, whose contributors wrote the debloat lists · Google Sans Flex (SIL OFL) · Material Color Utilities (Apache 2.0)</sub>
+</div>
