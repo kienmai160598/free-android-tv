@@ -901,7 +901,8 @@ final class WidgetShelf {
 
     /**
      * The system card's page in its three meter rows. A page of fewer lines leaves the top row out (the CPU
-     * one, as when it is hidden); a line without a share keeps its bar's room, so the rows do not jump.
+     * one, as when it is hidden); a line without a share drops its bar, so the gaps between rows stay even
+     * and a page of names and values sits in the middle of the card rather than high in it.
      */
     private void paintSystem() {
         List<SystemPages.Line> lines = systemPages.lines(systemPage, lastCpu, showCpu());
@@ -915,7 +916,7 @@ final class WidgetShelf {
             rowNames[row].setText(line.name);
             rowValues[row].setText(line.value);
             boolean bar = line.fill != SystemPages.Line.NO_BAR;
-            rowBars[row].setVisibility(bar ? View.VISIBLE : View.INVISIBLE);
+            rowBars[row].setVisibility(bar ? View.VISIBLE : View.GONE);
             if (bar) rowBars[row].setProgress(line.fill);
         }
     }
