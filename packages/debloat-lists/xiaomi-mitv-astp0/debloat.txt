@@ -22,6 +22,11 @@
 #   in the background: cmd appops set com.estrongs.android.pop RUN_IN_BACKGROUND ignore.
 # - Home stays com.mitv.tvhome: set-home-activity succeeds but resolution ignores it, and with
 #   com.mitv.tvhome disabled Home falls to com.android.tv.settings/.system.FallbackHome.
+# - km-launcher follows the system's night mode, which this firmware has no setting for:
+#   cmd uimode night yes|no|auto. Auto needs a location for sunset and the TV has none, so it
+#   stays in day mode. The time zone ships as Asia/Shanghai.
+# - Picture: Settings -> Image settings -> Display model is kept per source; "Picture" is the vivid
+#   one (contrast 55, saturation 60, cold), "Standard" is flat.
 
 # Xiaomi telemetry / push / cloud control
 com.miui.analytics
