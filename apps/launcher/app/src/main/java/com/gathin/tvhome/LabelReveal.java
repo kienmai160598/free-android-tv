@@ -8,14 +8,15 @@ import androidx.dynamicanimation.animation.FloatPropertyCompat;
 import androidx.dynamicanimation.animation.SpringAnimation;
 
 /**
- * M3E button group behaviour for a header button: an icon-only 40dp circle at rest that grows into a
+ * M3E button group behaviour for a header button: an icon-only segment at rest that grows into a
  * labelled pill while focused, the way an extended FAB expands. The width runs on a fast spatial spring
  * softened to a light landing; the label fades in with the growth (fully shown only near full width) and
  * out ahead of the collapse, so it never reads as text being cut off.
  */
 final class LabelReveal {
 
-    static final float SIZE_DP = 40f, ICON_DP = 22f, LABEL_GAP_DP = 8f, END_DP = 16f;
+    /** A segment at rest: wider than tall, as a connected group's icon buttons are. */
+    static final float WIDTH_DP = 48f, ICON_DP = 22f, LABEL_GAP_DP = 8f, END_DP = 16f;
     /** Fast spatial stiffness with default spatial damping: quick, with a small overshoot. */
     private static final Motion.Spec WIDTH_SPRING = new Motion.Spec(Motion.DEFAULT_SPATIAL.damping, Motion.FAST_SPATIAL.stiffness);
 
@@ -41,8 +42,8 @@ final class LabelReveal {
         this.view = view;
         this.animations = animations;
         density = view.getResources().getDisplayMetrics().density;
-        // Icon centred in the circle; the label starts where the circle ends.
-        int inset = Math.round((SIZE_DP - ICON_DP) / 2f * density);
+        // Icon centred in the segment; the label starts where the segment ends.
+        int inset = Math.round((WIDTH_DP - ICON_DP) / 2f * density);
         view.setPaddingRelative(inset, 0, Math.round(END_DP * density), 0);
         view.setCompoundDrawablePadding(Math.round(LABEL_GAP_DP * density));
         view.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
@@ -71,7 +72,7 @@ final class LabelReveal {
     }
 
     private float collapsed() {
-        return SIZE_DP * density;
+        return WIDTH_DP * density;
     }
 
     private float expanded() {
@@ -89,7 +90,7 @@ final class LabelReveal {
         if (e != null) e.labelAlpha(shown * shown);   // stays faint until the pill is mostly open
         ViewGroup.LayoutParams lp = view.getLayoutParams();
         if (lp == null) return;
-        // The spring may overshoot below the circle on the way back; never narrower than the circle.
+        // The spring may overshoot below the segment on the way back; never narrower than the segment.
         int w = Math.round(Math.max(collapsed(), px));
         if (lp.width != w) {
             lp.width = w;

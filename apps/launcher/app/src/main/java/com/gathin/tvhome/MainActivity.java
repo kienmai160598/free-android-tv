@@ -51,6 +51,7 @@ import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.TextUtils;
+import android.view.Choreographer;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
@@ -121,6 +122,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     private AppAdapter adapter;
     private HomeGrid grid;
+    /** Home has drawn once: from then on the tiles load before the frame, as they always did. */
+    private boolean firstFrameShown;
     /** Behind the header, over the grid: rows scrolled under the header fade into it. */
     private View headerScrim;
     /** How far down the scrim stays solid: the header's own bottom. */
@@ -315,6 +318,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         Palette.loadDarkMode(this);
         // The theme's window background is black; paint it in the scheme before the first frame.
         getWindow().setBackgroundDrawable(new ColorDrawable(Palette.currentOrBaseline().surface));
+        Fonts.preload(this);
         setContentView(R.layout.activity_main);
         density = getResources().getDisplayMetrics().density;
         // config.xml, overlaid by config.json from a pushed theme (see Config and tools/theme.sh).
@@ -590,8 +594,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnWifi.setOnKeyListener(pillKeys);
         btnSettings.setOnKeyListener(pillKeys);
         btnReorder.setOnKeyListener(pillKeys);
-        // The header buttons form an M3E button group: icon-only circles that grow into labelled pills on
-        // focus. Which are visible changes (Inputs appears at boot), so the spacing is set again on layout.
+        // The header buttons form an M3E connected button group: icon-only segments that grow into labelled pills
+        // on focus. Which are visible changes (Inputs appears at boot), so the shapes are set again on layout.
         headerButtons = new View[]{btnInputs, btnWifi, btnReorder, btnSettings};
         for (View button : headerButtons) {
             LabelReveal reveal = new LabelReveal((TextView) button, animations, reducedMotion);
@@ -712,7 +716,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         promptsPaused = false;
         if (rebuildOnResume) {
             tilesReady = false;
-            reloadApps(true);
+            // The first time, the header and widgets go on screen first and the tiles follow a frame later, as
+            // the grid's reveal plays: loading every banner held the first frame back by about 75 ms.
+            if (firstFrameShown) {
+                reloadApps(true);
+            } else {
+                firstFrameShown = true;
+                Choreographer.getInstance().postFrameCallback(frame -> handler.post(() -> reloadApps(true)));
+            }
         }
         rebuildOnResume = false;
         updateGreeting();
@@ -772,6 +783,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     /** The gap between the header and the first row at rest. */
     private static final float HEADER_GAP_DP = 10;
+    /** The header's connected button group: the gap between segments and their inner corners. */
+    private static final float GROUP_GAP_DP = 2, GROUP_INNER_DP = 8;
     /** How far below the header the scrim fades out, and how much scrolling fades it in. */
     private static final float HEADER_FADE_DP = 40;
 
@@ -1341,21 +1354,32 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      * labelled pill while focused (LabelReveal). Spacing is set from the segments now visible, since
      * Inputs appears at boot once the TV registers an input.
      */
+    /**
+     * The header buttons as an M3E connected button group: segments 2dp apart, fully round on the group's outer
+     * ends and 8dp on the inner ones. The focused segment rounds off completely as it grows into its label,
+     * the shape a connected group gives its selected button. Ends are read from the laid-out order, so a
+     * button that appears or goes (Inputs at boot, Reorder) re-shapes its neighbours.
+     */
     private void shapeHeaderGroup() {
-        float F = Expressive.FULL;
-        boolean first = true;
-        for (View b : headerButtons) {
-            if (b.getVisibility() != View.VISIBLE) continue;
-            // M3E shape morph: round at rest, squarer while focused (the selected-button shape).
-            float s = Shapes.MEDIUM * density;
-            Expressive.of(b).corners(new float[]{F, F, F, F}, new float[]{s, s, s, s});
+        List<View> shown = new ArrayList<>();
+        for (View b : headerButtons) if (b.getVisibility() == View.VISIBLE) shown.add(b);
+        if (shown.isEmpty()) return;
+        shown.sort((a, b) -> Integer.compare(a.getLeft(), b.getLeft()));
+        float full = Expressive.FULL, inner = GROUP_INNER_DP * density;
+        float[] round = {full, full, full, full};
+        int gap = (int) (GROUP_GAP_DP * density);
+        for (int i = 0; i < shown.size(); i++) {
+            View b = shown.get(i);
+            boolean leftEnd = i == 0, rightEnd = i == shown.size() - 1;
+            float left = leftEnd ? full : inner, right = rightEnd ? full : inner;
+            // Clockwise from the top left.
+            Expressive.of(b).corners(new float[]{left, right, right, left}, round);
             ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) b.getLayoutParams();
-            int start = first ? 0 : (int) (8 * density);
+            int start = leftEnd ? 0 : gap;
             if (lp.getMarginStart() != start) {
                 lp.setMarginStart(start);
                 b.setLayoutParams(lp);
             }
-            first = false;
         }
     }
 
