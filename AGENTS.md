@@ -30,6 +30,13 @@ TV_HOST=<ip> scripts/tvctl closed                  # port 5555 must be closed wh
 Build env (macOS): `JAVA_HOME=/opt/homebrew/opt/openjdk@17`,
 `ANDROID_HOME=/opt/homebrew/share/android-commandlinetools`.
 
+## Branches and releases
+
+- Work lands on `dev`; CI runs on every push to it. `main` only moves when a release does.
+- A release: merge `dev` into `main`, bump `versionCode` and `versionName` in
+  `apps/launcher/app/build.gradle`, then push one tag from `main` (`git push free v1.0.2`).
+  `release.yml` publishes the APK and tvctl. Never `git push --tags`: it also sends upstream's.
+
 ## Working on a real TV
 
 1. `probe`; the TV shows "Allow USB debugging?" once per key (`~/.android/adbkey`).
