@@ -123,7 +123,7 @@ public final class LauncherSettingsActivity extends Activity {
             choices.edit().putBoolean(WidgetShelf.PREF_KEY, on).apply();
             widgetsSwitch.setChecked(on);
         });
-        tvSettingsChoice.setOnClickListener(v -> open(new Intent(Settings.ACTION_SETTINGS)));
+        tvSettingsChoice.setOnClickListener(v -> open(TvSettings.main(this)));
         showAbout();
         refresh();
         View sheet = findViewById(R.id.sheet);

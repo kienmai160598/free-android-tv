@@ -927,7 +927,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             if (event.getKeyCode() != code) continue;
             if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {
                 open(settingsKeyPanel ? new Intent(this, QuickSettingsActivity.class)
-                        : systemIntent(Settings.ACTION_SETTINGS));
+                        : TvSettings.main(this));
             }
             return true;
         }
