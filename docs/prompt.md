@@ -27,6 +27,19 @@ step with a screenshot from the TV, and ask the owner before anything that depen
 - Apply with `scripts/tvctl disable <list>` in small batches, screenshot between batches.
 - Offer Private DNS ad blocking (Android 9+): `private_dns_specifier dns.adguard-dns.com`,
   `private_dns_mode hostname`; does not block YouTube ads; undo `private_dns_mode opportunistic`.
+- Offer replacements for preloads the owner still needs, e.g. Material Files
+  (`me.zhanghai.android.files`) for a file manager. A replacement must not catch intents the
+  TV's own apps send: after installing it, switch to each HDMI input and Live TV once.
+
+## System fixes
+
+- Time zone: compare `getprop persist.sys.timezone` with the zone the IP locates
+  (`get.geojs.io/v1/ip/geo.json`). Fix it in Settings → Date & time; where the firmware hides that,
+  use `service call alarm 3 s16 <zone>` (Android 9; check the transaction number on other versions).
+- Night mode: `cmd uimode night auto`, never `yes`, so the launcher follows the system. Some
+  firmware (Google TV) locks it on.
+- Picture: if colours look flat, look at the picture mode and the per-source settings in the
+  manufacturer's Settings, and leave the final choice to the owner.
 
 ## Launcher
 
@@ -35,7 +48,11 @@ step with a screenshot from the TV, and ask the owner before anything that depen
 - `TV_HOST=<ip> make install` (it handles the Home handover and rollback). On Google TV, disable
   setupwraith first, only after checking it does not own the saved Wi-Fi network.
 - Ask the owner to press every remote button; map dead ones with `input_key_keycodes`, `app_keys`,
-  `settings_key_keycodes` and reinstall with `--input-key-service` / `--home-key-service`.
+  `settings_key_keycodes` and reinstall with `--input-key-service` / `--home-key-service`. No Input
+  button: Launcher settings → Menu button opens Inputs. While an HDMI input plays, the TV's keys
+  must reach its player, or CEC hands the device back to the TV.
+- Walk the owner through Launcher settings: colour, backdrop, screensaver time and clock style,
+  motion, widgets (each widget's own settings), Edit Home.
 
 ## Finish
 

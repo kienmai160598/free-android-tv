@@ -41,7 +41,40 @@ Expressive, and reorganises the repository as a monorepo.
 Undo at any time with `scripts/tvctl restore packages/debloat-lists/<your-tv>/debloat.txt`.
 Change the look without rebuilding: `scripts/tvctl theme packages/themes/<theme>`.
 On Windows use `scripts\tvctl.ps1` and `apps\launcher\build-and-install.ps1 -TvHost <ip>`.
-Your TV is not listed? Give [`docs/prompt.md`](docs/prompt.md) to a coding assistant.
+
+## One prompt for a coding assistant
+
+A coding assistant that can run commands (Claude Code, Codex, Cursor's agent) can do all of
+the above from one prompt, plus the fixes those steps leave out. Turn on USB debugging (step 1),
+fill in the first line and paste the prompt:
+
+```text
+My TV: <brand and model, or "find out">. Its IP: <ip, or "find it on my network">.
+
+Set up this TV with https://github.com/kienmai160598/free-android-tv. Clone it, read AGENTS.md and
+docs/prompt.md, then follow docs/prompt.md on the real TV from start to finish. Check every step on
+the TV itself. Ask me only about what depends on how I use the TV, and do not stop until all of this
+is done:
+
+1. Connect with scripts/tvctl probe. Tell me when to accept "Allow USB debugging?" (tick "Always
+   allow").
+2. Back up the package list and settings before changing anything.
+3. Debloat with packages/debloat-lists/<model>/ if my model is there; otherwise build a list in
+   small batches. First ask me, as a checklist, about streaming apps, the voice assistant,
+   Chromecast and Miracast, and firmware updates.
+4. Offer Private DNS ad blocking.
+5. Fix what the firmware gets wrong: the time zone (from my IP), night mode on auto (never forced
+   dark), and the picture mode if colours look washed out.
+6. Install km-launcher with make install and make it Home. Show me its settings (gear): colour,
+   backdrop (shapes, sky that follows the weather, plain), screensaver time and clock style,
+   motion, and the widgets (weather, air quality, system info pages, calendar).
+7. Make every remote button work. Ask me to press each one: Input or Menu opens the inputs, app
+   keys like Netflix and YouTube open their apps, and gear opens settings. Pressing a button must not
+   pull an HDMI device (CEC) back to the TV.
+8. Offer to replace the preloads I lose: Material Files as the file manager, plus any apps I name.
+9. Finish: give me the restore command and the install command, add or update my model's debloat
+   list, and offer to close ADB.
+```
 
 ## Tech stack
 
