@@ -17,8 +17,8 @@
 # - mitv.service is the core MiTV service: do not touch it. The owner chose to drop payment, Mi Home,
 #   Mi Video, the voice assistant and every casting receiver but AirPlay (in com.xiaomi.mitv.smartshare).
 #   The app store and com.mitv.videoplayer (USB files) stay.
-# - com.xiaomi.mitv.remotecontroller.service looped at 100-150% CPU after Home changed hands and
-#   flooded logd (~490 MB in 30 min); am force-stop it. ES File Explorer runs DLNA and a WebView
+# - com.xiaomi.mitv.remotecontroller.service looped at 100-190% CPU and flooded logd (~490 MB in
+#   30 min): its relay host is gone, so it is disabled below. ES File Explorer runs DLNA and a WebView
 #   in the background: cmd appops set com.estrongs.android.pop RUN_IN_BACKGROUND ignore.
 # - Home stays com.mitv.tvhome: set-home-activity succeeds but resolution ignores it, and with
 #   com.mitv.tvhome disabled Home falls to com.android.tv.settings/.system.FallbackHome.
@@ -62,6 +62,11 @@ com.duokan.airkan.tvbox                 # AirKan DLNA
 com.xiaomi.wfdsinkhelperservice         # Miracast sink helper
 com.xiaomi.mi_connect_service           # Mi Connect phone link
 
+# Phone remote, air mouse and the TV assistant relay. It reconnects to relay01.c.assistant.tv.mi.com,
+# which no longer resolves, about 19 times a second with no backoff: ~190% CPU in GC after every boot.
+# The Bluetooth remote runs in com.android.bluetooth (BleRemoteService) and is not affected.
+com.xiaomi.mitv.remotecontroller.service
+
 # Chinese voice assistant (owner's choice)
 com.xiaomi.voicecontrol
 com.xiaomi.mico.mqtt.service.application.tv   # Xiao AI speaker link
@@ -75,7 +80,7 @@ com.xiaomi.mitv.payment
 com.mitv.mivideoplayer                  # Mi Video, CN streaming; com.mitv.videoplayer still plays USB files
 com.xiaomi.smarthome.tv                 # Mi Home on the TV
 
-# Keyboard: LeanKey (org.liskovsoft.androidtv.rukeyboard, GitHub yuliskov/LeanKeyboard) is the default
-# IME now: ime enable/set .../com.liskovsoft.leankeyboard.ime.LeanbackImeService. Re-enable Sogou
-# before removing LeanKey, or the TV has no keyboard.
+# Keyboard: Gboard for Android TV 16.1.02 (com.google.android.inputmethod.latin, tv_release armeabi-v7a,
+# minSdk 26; 17.x needs Android 10) is the only IME: ime enable/set .../com.android.inputmethod.latin.LatinIME.
+# It logs missing Play Services but types fine. Re-enable Sogou before removing it, or the TV has no keyboard.
 com.sohu.inputmethod.sogou.tv
