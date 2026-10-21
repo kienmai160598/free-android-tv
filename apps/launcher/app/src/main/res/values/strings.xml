@@ -151,13 +151,13 @@
 
     <!-- Widget settings -->
     <string name="widget_settings">Settings</string>
-    <string name="setting_location">Location: %s</string>
-    <string name="setting_location_shared">Location (shared with Weather): %s</string>
-    <string name="setting_unit">Unit: %s</string>
-    <string name="setting_countdown">Count down to: %s</string>
+    <string name="setting_location">Location</string>
+    <string name="setting_location_shared">Location (shared with Weather)</string>
+    <string name="setting_unit">Unit</string>
+    <string name="setting_countdown">Count down to</string>
     <string name="countdown_next">Next holiday</string>
     <string name="countdown_tet">Tết only</string>
-    <string name="setting_cpu">CPU: %s</string>
+    <string name="setting_cpu">CPU line</string>
     <string name="option_shown">Shown</string>
     <string name="option_hidden">Hidden</string>
     <string name="widget_city_auto">Automatic (from IP)</string>
@@ -261,4 +261,37 @@
     <string name="about_author_name" translatable="false">Kien Mai Trung</string>
     <string name="about_email_value" translatable="false">kien.mai.trung.98@gmail.com</string>
     <string name="about_source_value" translatable="false">github.com/kienmai160598/free-android-tv</string>
+    <string name="setting_opens">Opens on</string>
+    <string name="page_now">Now</string>
+    <string name="page_details">Details</string>
+    <string name="page_tomorrow">Tomorrow</string>
+    <string name="page_today">Today</string>
+    <string name="sys_page_usage">In use</string>
+    <string name="sys_page_network">Network</string>
+    <string name="sys_page_device">Device</string>
+    <string name="sys_page_space">Free space</string>
+    <string name="sys_page_chip">Chip</string>
+    <string name="sys_wifi">Wi-Fi</string>
+    <string name="sys_ethernet">Ethernet</string>
+    <string name="sys_offline">Offline</string>
+    <string name="sys_connected">Connected</string>
+    <string name="sys_ip">IP</string>
+    <string name="sys_signal">Signal</string>
+    <string name="sys_link">Link</string>
+    <string name="sys_wired">Wired</string>
+    <string name="sys_model">Model</string>
+    <string name="sys_android">Android</string>
+    <string name="sys_uptime">Uptime</string>
+    <string name="sys_usb">USB</string>
+    <string name="sys_none">None</string>
+    <string name="sys_free">%s free</string>
+    <string name="sys_clock">Clock</string>
+    <string name="sys_thermal">Thermal</string>
+    <string name="thermal_normal">Normal</string>
+    <string name="thermal_warm">Warm</string>
+    <string name="thermal_hot">Hot</string>
+    <string name="thermal_unknown">Not reported</string>
+    <string name="uptime_days">%1$d d %2$d h</string>
+    <string name="uptime_hours">%1$d h %2$d min</string>
+    <string name="uptime_minutes">%d min</string>
 </resources>

@@ -1393,7 +1393,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         View panel = getLayoutInflater().inflate(R.layout.popup_inputs, root, false);
         LinearLayout rows = panel.findViewById(R.id.rows);
         PopupWindow popup = glassPopup(panel, (int) (200 * density));
-        for (WidgetShelf.MenuItem item : items) addMenuRow(rows, popup, item.icon, item.title, item.action);
+        for (WidgetShelf.MenuItem item : items) {
+            View row = addMenuRow(rows, popup, item.icon, item.title, item.action);
+            if (item.value == null) continue;
+            TextView value = row.findViewById(R.id.status);
+            value.setText(item.value);
+            value.setVisibility(View.VISIBLE);
+        }
         skin(panel);
         panel.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
         popup.setWidth(Math.max((int) (220 * density), panel.getMeasuredWidth()));

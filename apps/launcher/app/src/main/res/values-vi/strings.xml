@@ -130,13 +130,13 @@
 
     <!-- Widget settings -->
     <string name="widget_settings">Cài đặt</string>
-    <string name="setting_location">Vị trí: %s</string>
-    <string name="setting_location_shared">Vị trí (chung với Thời tiết): %s</string>
-    <string name="setting_unit">Đơn vị: %s</string>
-    <string name="setting_countdown">Đếm ngược: %s</string>
+    <string name="setting_location">Vị trí</string>
+    <string name="setting_location_shared">Vị trí (chung với Thời tiết)</string>
+    <string name="setting_unit">Đơn vị</string>
+    <string name="setting_countdown">Đếm ngược</string>
     <string name="countdown_next">Ngày lễ kế tiếp</string>
     <string name="countdown_tet">Chỉ Tết</string>
-    <string name="setting_cpu">CPU: %s</string>
+    <string name="setting_cpu">Dòng CPU</string>
     <string name="option_shown">Hiện</string>
     <string name="option_hidden">Ẩn</string>
     <string name="widget_city_auto">Tự động (theo IP)</string>
@@ -235,4 +235,37 @@
     <string name="about_author">Tác giả</string>
     <string name="about_email">Email</string>
     <string name="about_source">Mã nguồn</string>
+    <string name="setting_opens">Trang mở đầu</string>
+    <string name="page_now">Hiện tại</string>
+    <string name="page_details">Chi tiết</string>
+    <string name="page_tomorrow">Ngày mai</string>
+    <string name="page_today">Hôm nay</string>
+    <string name="sys_page_usage">Đang dùng</string>
+    <string name="sys_page_network">Mạng</string>
+    <string name="sys_page_device">Thiết bị</string>
+    <string name="sys_page_space">Dung lượng trống</string>
+    <string name="sys_page_chip">Chip</string>
+    <string name="sys_wifi">Wi-Fi</string>
+    <string name="sys_ethernet">Ethernet</string>
+    <string name="sys_offline">Mất mạng</string>
+    <string name="sys_connected">Đã kết nối</string>
+    <string name="sys_ip">IP</string>
+    <string name="sys_signal">Sóng</string>
+    <string name="sys_link">Kết nối</string>
+    <string name="sys_wired">Có dây</string>
+    <string name="sys_model">Model</string>
+    <string name="sys_android">Android</string>
+    <string name="sys_uptime">Đã chạy</string>
+    <string name="sys_usb">USB</string>
+    <string name="sys_none">Không có</string>
+    <string name="sys_free">Trống %s</string>
+    <string name="sys_clock">Xung nhịp</string>
+    <string name="sys_thermal">Nhiệt</string>
+    <string name="thermal_normal">Bình thường</string>
+    <string name="thermal_warm">Hơi nóng</string>
+    <string name="thermal_hot">Nóng</string>
+    <string name="thermal_unknown">Không báo</string>
+    <string name="uptime_days">%1$d ngày %2$d giờ</string>
+    <string name="uptime_hours">%1$d giờ %2$d phút</string>
+    <string name="uptime_minutes">%d phút</string>
 </resources>

@@ -2,16 +2,12 @@ package com.gathin.tvhome;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Rect;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.StatFs;
-import android.text.format.Formatter;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,7 +21,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.color.utilities.Blend;
 import com.google.android.material.color.utilities.Hct;
 
-import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -82,11 +77,18 @@ final class WidgetShelf {
         final int icon;
         final String title;
         final Runnable action;
+        /** A setting's current value, shown at the row's end; null for an action. */
+        final String value;
 
         MenuItem(int icon, String title, Runnable action) {
+            this(icon, title, action, null);
+        }
+
+        MenuItem(int icon, String title, Runnable action, String value) {
             this.icon = icon;
             this.title = title;
             this.action = action;
+            this.value = value;
         }
     }
     /** A failed weather fetch is not retried sooner than this. */
@@ -133,10 +135,13 @@ final class WidgetShelf {
     private final Runnable cpuTick = new Runnable() {
         @Override
         public void run() {
-            paintCpu();
+            int busy = cpu.sample();
+            if (busy != CpuMeter.NOT_YET) lastCpu = busy;
+            if (systemPage == SystemPages.USAGE && showCpu() || systemPage == SystemPages.CHIP) paintSystem();
             main.postDelayed(this, CPU_MS);
         }
     };
+    private int lastCpu = CpuMeter.NOT_YET;
     private final Handler main = new Handler(Looper.getMainLooper());
     private final float density;
     /** The weather_city in config.xml: the place until the owner picks one on the widget. */
@@ -144,6 +149,11 @@ final class WidgetShelf {
     private final SharedPreferences prefs;
     private static final String CITY_KEY = "weather_city", UNIT_KEY = "weather_unit",
             TET_ONLY_KEY = "calendar_tet_only", CPU_KEY = "system_cpu";
+    /** The page each card opens on when Home shows, from its settings. */
+    private static final String WEATHER_PAGE_KEY = "weather_page", AIR_PAGE_KEY = "air_page",
+            SYSTEM_PAGE_KEY = "system_page";
+    private static final int[] WEATHER_PAGE_NAMES = {R.string.page_now, R.string.page_details, R.string.page_tomorrow};
+    private static final int[] AIR_PAGE_NAMES = {R.string.page_today, R.string.page_tomorrow};
     /** The places offered, as geocoder queries ("name|country"); "" is wherever the IP says. */
     private static final String[] CITY_QUERIES = {"", "Hanoi|VN", "Ho Chi Minh City|VN", "Da Nang|VN", "Haiphong|VN",
             "Can Tho|VN", "Hue|VN", "Nha Trang|VN", "Da Lat|VN"};
@@ -165,6 +175,12 @@ final class WidgetShelf {
     /** What the weather card shows, stepped by OK: now, the details of now, tomorrow. */
     private int weatherPage;
     private static final int WEATHER_PAGES = 3;
+    /** What the system card shows, stepped by OK (SystemPages), in its three meter rows. */
+    private int systemPage;
+    private final SystemPages systemPages;
+    private final ImageView[] rowIcons;
+    private final TextView[] rowNames, rowValues;
+    private final M3Progress[] rowBars;
     private IntConsumer downFromCard;
 
     WidgetShelf(Activity activity, View shelf, boolean animations, boolean reducedMotion, boolean expressiveMotion, Host host) {
@@ -202,6 +218,17 @@ final class WidgetShelf {
         cpuIcon = shelf.findViewById(R.id.cpuIcon);
         ramName = shelf.findViewById(R.id.ramName);
         storageName = shelf.findViewById(R.id.storageName);
+        systemPages = new SystemPages(activity);
+        rowIcons = new ImageView[]{cpuIcon, ramIcon, storageIcon};
+        rowNames = new TextView[]{cpuName, ramName, storageName};
+        rowValues = new TextView[]{cpuValue, ramValue, storageValue};
+        rowBars = new M3Progress[]{cpuBar, ramBar, storageBar};
+        for (TextView line : new TextView[]{weatherPlace, weatherDetail, airLabel, airDetail, lunarLabel, holiday}) {
+            TextFit.attach(line);
+        }
+        for (int i = 0; i < rowNames.length; i++) {
+            TextFit.attachRow(rowNames[i], rowValues[i], (View) rowNames[i].getParent());
+        }
         addCard = shelf.findViewById(R.id.widgetAdd);
         addLabel = shelf.findViewById(R.id.widgetAddLabel);
         addIcon = shelf.findViewById(R.id.widgetAddIcon);
@@ -235,6 +262,10 @@ final class WidgetShelf {
             weatherPage = (weatherPage + 1) % WEATHER_PAGES;
             cards[0].turn(this::paintWeather);
             refreshWeather(false);
+        });
+        cards[1].setOnClickListener(v -> {
+            systemPage = (systemPage + 1) % SystemPages.COUNT;
+            cards[1].turn(this::paintSystem);
         });
         cards[2].setOnClickListener(v -> {
             airTomorrow = !airTomorrow;
@@ -504,46 +535,76 @@ final class WidgetShelf {
         return query.contains("|") ? query.substring(0, query.indexOf('|')) : query;
     }
 
-    /** A widget's settings, each row showing its current value; OK on one lists its choices. */
+    /**
+     * A widget's settings, matching what the card shows: each row its icon, its name and, at its end, the current
+     * value; OK on one lists its choices. Every card that steps through pages chooses the one it opens on.
+     */
     private void showSettingsMenu(String id) {
         WidgetCard anchor = card(id);
         List<MenuItem> items = new ArrayList<>();
         switch (id) {
             case WEATHER:
-                items.add(new MenuItem(0, activity.getString(R.string.setting_location, cityName(city())), () -> showCityMenu(anchor)));
-                items.add(new MenuItem(0, activity.getString(R.string.setting_unit, fahrenheit() ? "°F" : "°C"), () ->
-                        showChoices(anchor, new String[]{"°C", "°F"}, fahrenheit() ? 1 : 0, i -> {
+                items.add(setting(R.drawable.ic_location, R.string.setting_location, cityName(city()),
+                        () -> showCityMenu(anchor)));
+                items.add(setting(R.drawable.ic_thermostat, R.string.setting_unit, fahrenheit() ? "°F" : "°C",
+                        () -> showChoices(anchor, new String[]{"°C", "°F"}, fahrenheit() ? 1 : 0, i -> {
                             prefs.edit().putString(UNIT_KEY, i == 1 ? "f" : "c").apply();
                             paintWeather();
                         })));
+                items.add(opensOn(anchor, WEATHER_PAGE_KEY, WEATHER_PAGE_NAMES, i -> {
+                    weatherPage = i;
+                    paintWeather();
+                }));
                 break;
             case AIR:
-                items.add(new MenuItem(0, activity.getString(R.string.setting_location_shared, cityName(city())), () -> showCityMenu(anchor)));
+                items.add(setting(R.drawable.ic_location, R.string.setting_location_shared, cityName(city()),
+                        () -> showCityMenu(anchor)));
+                items.add(opensOn(anchor, AIR_PAGE_KEY, AIR_PAGE_NAMES, i -> {
+                    airTomorrow = i == 1;
+                    paintAir();
+                }));
                 break;
             case CALENDAR:
-                items.add(new MenuItem(0, activity.getString(R.string.setting_countdown, activity.getString(
-                        tetOnly() ? R.string.countdown_tet : R.string.countdown_next)), () ->
-                        showChoices(anchor, new String[]{activity.getString(R.string.countdown_next), activity.getString(R.string.countdown_tet)},
-                                tetOnly() ? 1 : 0, i -> {
-                                    prefs.edit().putBoolean(TET_ONLY_KEY, i == 1).apply();
-                                    holidayStep = 0;
-                                    paintCalendar();
-                                })));
+                String[] countdown = {activity.getString(R.string.countdown_next),
+                        activity.getString(R.string.countdown_tet)};
+                items.add(setting(R.drawable.ic_timer, R.string.setting_countdown, countdown[tetOnly() ? 1 : 0],
+                        () -> showChoices(anchor, countdown, tetOnly() ? 1 : 0, i -> {
+                            prefs.edit().putBoolean(TET_ONLY_KEY, i == 1).apply();
+                            holidayStep = 0;
+                            paintCalendar();
+                        })));
                 break;
             default:
-                items.add(new MenuItem(0, activity.getString(R.string.setting_cpu, activity.getString(
-                        showCpu() ? R.string.option_shown : R.string.option_hidden)), () ->
-                        showChoices(anchor, new String[]{activity.getString(R.string.option_shown), activity.getString(R.string.option_hidden)},
-                                showCpu() ? 0 : 1, i -> {
-                                    prefs.edit().putBoolean(CPU_KEY, i == 0).apply();
-                                    if (started) {
-                                        stop();
-                                        start();
-                                    }
-                                })));
+                items.add(opensOn(anchor, SYSTEM_PAGE_KEY, SystemPages.NAMES, i -> {
+                    systemPage = i;
+                    paintSystem();
+                }));
+                String[] shown = {activity.getString(R.string.option_shown),
+                        activity.getString(R.string.option_hidden)};
+                items.add(setting(R.drawable.ic_memory, R.string.setting_cpu, shown[showCpu() ? 0 : 1],
+                        () -> showChoices(anchor, shown, showCpu() ? 0 : 1, i -> {
+                            prefs.edit().putBoolean(CPU_KEY, i == 0).apply();
+                            paintSystem();
+                        })));
                 break;
         }
         host.showMenu(anchor, items);
+    }
+
+    private MenuItem setting(int icon, int name, String value, Runnable choose) {
+        return new MenuItem(icon, activity.getString(name), choose, value);
+    }
+
+    /** The page a card opens on when Home shows; picking one also shows it now. */
+    private MenuItem opensOn(View anchor, String key, int[] pageNames, IntConsumer show) {
+        String[] names = new String[pageNames.length];
+        for (int i = 0; i < names.length; i++) names[i] = activity.getString(pageNames[i]);
+        int current = Math.min(prefs.getInt(key, 0), names.length - 1);
+        return setting(R.drawable.ic_swap_vert, R.string.setting_opens, names[current],
+                () -> showChoices(anchor, names, current, i -> {
+                    prefs.edit().putInt(key, i).apply();
+                    show.accept(i);
+                }));
     }
 
     /** The places: Automatic (the IP's) and the main cities. Weather and air quality both refresh for it. */
@@ -651,14 +712,14 @@ final class WidgetShelf {
     void start() {
         if (!enabled || started) return;
         started = true;
+        weatherPage = prefs.getInt(WEATHER_PAGE_KEY, 0) % WEATHER_PAGES;
+        airTomorrow = prefs.getInt(AIR_PAGE_KEY, 0) == 1;
+        systemPage = prefs.getInt(SYSTEM_PAGE_KEY, 0) % SystemPages.COUNT;
         if (has(CALENDAR)) paintCalendar();
         if (has(SYSTEM)) {
             paintSystem();
-            showCpuRow();
-            if (showCpu()) {
-                cpu.sample();   // the baseline: the first figure comes with the first tick
-                main.postDelayed(cpuTick, CPU_MS);
-            }
+            cpu.sample();   // the baseline: the first figure comes with the first tick
+            main.postDelayed(cpuTick, CPU_MS);
         }
         if (has(WEATHER)) refreshWeather(false);
         if (has(AIR)) refreshAir(false);
@@ -825,66 +886,25 @@ final class WidgetShelf {
 
     // ---- this TV ---------------------------------------------------------------------------------
 
-    private void showCpuRow() {
-        int v = showCpu() ? View.VISIBLE : View.GONE;
-        for (int id : new int[]{R.id.cpuRow, R.id.cpuBar, R.id.cpuGap}) shelf.findViewById(id).setVisibility(v);
-    }
-
-    private void paintCpu() {
-        int busy = cpu.sample();
-        if (busy == CpuMeter.NOT_YET) return;
-        cpuValue.setText(busy + "%");
-        cpuBar.setProgress(busy / 100f);
-    }
-
-    private void paintSystem() {
-        ActivityManager am = activity.getSystemService(ActivityManager.class);
-        ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
-        am.getMemoryInfo(mi);
-        long used = mi.totalMem - mi.availMem;
-        ramValue.setText(usedOf(used, mi.totalMem));
-        ramBar.setProgress(mi.totalMem > 0 ? used / (float) mi.totalMem : 0f);
-        try {
-            StatFs fs = new StatFs(Environment.getDataDirectory().getPath());
-            long total = fs.getTotalBytes(), usedDisk = total - fs.getAvailableBytes();
-            storageValue.setText(usedOf(usedDisk, total));
-            storageBar.setProgress(total > 0 ? usedDisk / (float) total : 0f);
-        } catch (IllegalArgumentException e) {
-            storageValue.setText("");
-        }
-    }
-
     /**
-     * "1.4 / 2.0 GB": the unit once, when both sizes share it, so the meter's name keeps its room. Under
-     * a gigabyte of a total in gigabytes reads "0.8 / 1.6 GB", not "843 MB / 1.6 GB" or the Formatter's
-     * "0.91 GB" past 900 MB (both cut "Memory" short).
+     * The system card's page in its three meter rows. A page of fewer lines leaves the top row out (the CPU
+     * one, as when it is hidden); a line without a share keeps its bar's room, so the rows do not jump.
      */
-    private String usedOf(long used, long total) {
-        String u = size(used), t = size(total);
-        int cut = lastSpace(t);
-        boolean sameUnit = cut > 0 && lastSpace(u) > 0 && u.substring(lastSpace(u)).equals(t.substring(cut));
-        if (total >= GIGABYTE && used < GIGABYTE) u = oneDecimal(used / (double) GIGABYTE);
-        else if (sameUnit) u = u.substring(0, lastSpace(u));
-        return activity.getString(R.string.widget_used_of, u, t);
-    }
-
-    /** Formatter's gigabyte since Android 8. */
-    private static final long GIGABYTE = 1_000_000_000L;
-
-    private static String oneDecimal(double value) {
-        NumberFormat format = NumberFormat.getNumberInstance();
-        format.setMinimumFractionDigits(1);
-        format.setMaximumFractionDigits(1);
-        return format.format(value);
-    }
-
-    private static int lastSpace(String s) {
-        for (int i = s.length() - 1; i >= 0; i--) if (Character.isSpaceChar(s.charAt(i))) return i;
-        return -1;
-    }
-
-    private String size(long bytes) {
-        return Formatter.formatShortFileSize(activity, bytes);
+    private void paintSystem() {
+        List<SystemPages.Line> lines = systemPages.lines(systemPage, lastCpu, showCpu());
+        int offset = rowIcons.length - lines.size();
+        int top = offset > 0 ? View.GONE : View.VISIBLE;
+        for (int id : new int[]{R.id.cpuRow, R.id.cpuBar, R.id.cpuGap}) shelf.findViewById(id).setVisibility(top);
+        for (int i = 0; i < lines.size(); i++) {
+            SystemPages.Line line = lines.get(i);
+            int row = i + offset;
+            rowIcons[row].setImageResource(line.icon);
+            rowNames[row].setText(line.name);
+            rowValues[row].setText(line.value);
+            boolean bar = line.fill != SystemPages.Line.NO_BAR;
+            rowBars[row].setVisibility(bar ? View.VISIBLE : View.INVISIBLE);
+            if (bar) rowBars[row].setProgress(line.fill);
+        }
     }
 
     // ---- air quality -----------------------------------------------------------------------------

@@ -37,6 +37,11 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+
+    packaging {
+        // Kotlin metadata the libraries carry, read only by kotlin-reflect, which a Java app never loads (~9 KB).
+        resources.excludes += ['kotlin/**', 'META-INF/*.kotlin_module', 'DebugProbesKt.bin']
+    }
 }
 
 dependencies {
