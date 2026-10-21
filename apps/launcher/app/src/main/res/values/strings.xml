@@ -223,4 +223,36 @@
     <string name="boot_options_message">Choose what the TV does next</string>
     <string name="restart_desc">Turns the TV off and on again</string>
     <string name="power_off_desc">Standby, the remote\'s power button wakes it</string>
+    <string name="settings_group_look">Appearance</string>
+    <string name="look_color">Colour</string>
+    <string name="look_color_theme">Theme default</string>
+    <string-array name="look_seed_names">
+        <item>Violet</item>
+        <item>Blue</item>
+        <item>Teal</item>
+        <item>Green</item>
+        <item>Orange</item>
+        <item>Pink</item>
+        <item>Red</item>
+    </string-array>
+    <string name="look_backdrop">Background</string>
+    <string name="look_backdrop_shapes">Expressive shapes</string>
+    <string name="look_backdrop_sky">Sky that follows the time of day</string>
+    <string name="look_backdrop_plain">Plain</string>
+    <string name="look_backdrop_wallpaper">The theme\'s wallpaper</string>
+    <string name="settings_group_screensaver">Screensaver</string>
+    <string name="screensaver_after">Start after</string>
+    <string name="screensaver_never">Never</string>
+    <plurals name="screensaver_minutes">
+        <item quantity="one">%d minute</item>
+        <item quantity="other">%d minutes</item>
+    </plurals>
+    <string name="screensaver_denied">Needs tvctl install to change the TV\'s screensaver time</string>
+    <string name="screensaver_style">Clock style</string>
+    <string name="screensaver_style_shapes">Moving shapes</string>
+    <string name="screensaver_style_glow">Colour glow</string>
+    <string name="screensaver_style_minimal">Minimal, dim</string>
+    <string name="screensaver_style_large">Large clock</string>
+    <string name="menu_inputs">Menu button opens Inputs</string>
+    <string name="menu_inputs_desc">The three-line button lists HDMI and the other inputs, in any app</string>
 </resources>

@@ -232,19 +232,20 @@ final class WidgetShelf {
             });
         }
         addCard.setOnClickListener(v -> showAddMenu());
+        for (WidgetCard card : allCards()) card.setMotion(motion);
         cards[0].setOnClickListener(v -> {
             weatherPage = (weatherPage + 1) % WEATHER_PAGES;
-            paintWeather();
+            cards[0].turn(this::paintWeather);
             refreshWeather(false);
         });
         cards[1].setOnClickListener(v -> host.openStorage());
         cards[2].setOnClickListener(v -> {
             airTomorrow = !airTomorrow;
-            paintAir();
+            cards[2].turn(this::paintAir);
         });
         cards[3].setOnClickListener(v -> {
             holidayStep++;
-            paintCalendar();
+            cards[3].turn(this::paintCalendar);
         });
     }
 

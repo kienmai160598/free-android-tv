@@ -13,9 +13,9 @@ Locales: English and Vietnamese only.
 | `.MainActivity` | Home: header, widget shelf, dock, grid, Inputs/network/settings pills |
 | `.LauncherSettingsActivity`, `.QuickSettingsActivity`, `.HomeSettingsActivity` | On-TV settings (side sheet), gear-key panel, default-home picker |
 | `.RunningAppsActivity` | Running apps side sheet: switch to or force-stop apps, through `LocalAdb` |
-| `.InputKeyService` | Accessibility: Input button (`KEYCODE_TV`, `KEYCODE_TV_INPUT`, `input_key_keycodes`), `app_keys`, `running_apps_keycodes` |
+| `.InputKeyService` | Accessibility: Input button (`KEYCODE_TV`, `KEYCODE_TV_INPUT`, `input_key_keycodes`, Menu if `menu_opens_inputs`), `app_keys`, `running_apps_keycodes`; no system switcher: Home's Inputs menu |
 | `.HomeKeyService` | Accessibility: Home that sends `KEYCODE_ALL_APPS`, `settings_key_*`, `app_keys`; stands in for Home where the firmware keeps it (Xiaomi CN): `KEYCODE_HOME` and the stock launcher coming to the front open this one |
-| `.ClockDream` | Clock screensaver |
+| `.ClockDream` | Clock screensaver; style from Launcher settings (shapes, glow, minimal, large) |
 
 ## Code map
 
@@ -25,8 +25,11 @@ Locales: English and Vietnamese only.
 - Widgets: `WidgetShelf`, `WidgetCard`, `Weather` and `AirQuality` (Open-Meteo; the place from ipwho.is or geojs.io), `CpuMeter` (cpuidle in sysfs, since `/proc/stat` is hidden), `LunarCalendar`, `Shamsi`.
 - Network pill: `SpeedTest` (Cloudflare `speed.cloudflare.com`, only when asked from the Wi-Fi menu).
 - Running apps: `LocalAdb` (adb client to `127.0.0.1:5555` with its own key in `files/adbkey`; the TV asks once to allow it), `BackgroundApps` (`ps` and recent tasks, `am force-stop`). Port 5555 is gone after a reboot until `adb tcpip 5555` runs again.
-- Backgrounds: `WallpaperPlayer`, `WallpaperRotation`, `WallpaperSize`, `Sky`/`SkyView`, `ExpressiveBackdrop`.
+- Backgrounds: `WallpaperPlayer`, `WallpaperRotation`, `WallpaperSize`, `Sky`/`SkyView` (tinted by the
+  weather widget's last report, which `WeatherShapes` draws in M3E shapes), `ExpressiveBackdrop`,
+  `HomeLook` (the colour and backdrop chosen on the TV). Screensaver choices: `Screensaver`.
 - Festive skin: `Festival`, `DiyaDrawable`, `BellDrawable`, `MarigoldDrawable`, `PetalShowerView`.
+- Inputs on Xiaomi's China TVs: `XiaomiInputs` (their player's source numbers, from the port labels).
 - Config: `Config` reads `res/values/config.xml`, overlaid by `/sdcard/Android/data/com.gathin.tvhome/files/config.json` (a theme).
 - Module cards: `Cards`, `CardFeature`. Remote keys: `RemoteKeys`. VPN pill badge: `VpnBadge`.
 
@@ -52,7 +55,10 @@ Unknown or mistyped theme keys are ignored; a theme that does not parse is ignor
 | `greeting_name`, `shamsi_date`, `vpn_app` | Header and network pill |
 | `festival`, `festival_until`, `greeting`, `accent_color` | Festive skin (theme only) |
 
-On-TV choices (columns, motion) win until "Follow theme"; pushing or resetting a theme clears them.
+On-TV choices (columns, motion, colour, backdrop) win until "Follow theme"; pushing or resetting a theme
+clears them. The colour is stored as `background_color`; `backdrop` (shapes, sky, plain) and `dream_style`
+are on-TV only, not in the contract. The screensaver time is the system's `screen_off_timeout`, written
+with `WRITE_SECURE_SETTINGS` (`tvctl install` grants it).
 App library choices live in `library_apps.txt` / `library_home_removed.txt` (128 entries each).
 
 ## Module cards (spec 1)

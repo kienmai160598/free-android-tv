@@ -15,8 +15,7 @@
         android:layout_height="match_parent"
         android:layout_gravity="end"
         android:layout_margin="24dp"
-        android:orientation="vertical"
-        android:elevation="6dp">
+        android:orientation="vertical">
 
 
         <ScrollView
@@ -70,6 +69,19 @@
                 <LinearLayout style="@style/SettingsSheetGroup">
                     <TextView android:id="@+id/columnsChoice" style="@style/SettingsListItem" />
                     <TextView android:id="@+id/widgetsChoice" style="@style/SettingsListItem" />
+                    <TextView android:id="@+id/menuInputsChoice" style="@style/SettingsListItem" />
+                </LinearLayout>
+
+                <TextView style="@style/SettingsSheetLabel" android:text="@string/settings_group_look" />
+                <LinearLayout style="@style/SettingsSheetGroup">
+                    <TextView android:id="@+id/colorChoice" style="@style/SettingsListItem" />
+                    <TextView android:id="@+id/backdropChoice" style="@style/SettingsListItem" />
+                </LinearLayout>
+
+                <TextView style="@style/SettingsSheetLabel" android:text="@string/settings_group_screensaver" />
+                <LinearLayout style="@style/SettingsSheetGroup">
+                    <TextView android:id="@+id/screensaverTimeChoice" style="@style/SettingsListItem" />
+                    <TextView android:id="@+id/screensaverStyleChoice" style="@style/SettingsListItem" />
                 </LinearLayout>
 
                 <TextView style="@style/SettingsSheetLabel" android:text="@string/settings_group_you" />

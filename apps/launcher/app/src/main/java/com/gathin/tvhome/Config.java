@@ -66,7 +66,7 @@ final class Config {
     final boolean showStats;
     /** App library pill after the last Home row (config.xml app_library). */
     final boolean appLibrary;
-    /** Background colour behind everything, #RRGGBB; black unless a theme says otherwise. */
+    /** Background colour behind everything, #RRGGBB; black unless a theme or Launcher settings says otherwise. */
     final int backgroundColor;
     /** Time-of-day backdrop, 0 to 100 (config.xml, sky_intensity); 0 keeps the plain background. */
     final int skyIntensity;
@@ -218,6 +218,7 @@ final class Config {
         if (chosenColumns >= 4 && chosenColumns <= 7) columns = chosenColumns;
         animations = choices.getBoolean(Contract.Key.ANIMATIONS, animations);
         advancedEffects = choices.getBoolean(Contract.Key.ADVANCED_EFFECTS, advancedEffects);
+        background = choices.getInt(Contract.Key.BACKGROUND_COLOR, background);
         File wallpaper = dir != null ? new File(dir, WALLPAPER_NAME) : null;
         if (wallpaper != null && !(wallpaper.isFile() && wallpaper.length() > 0)) wallpaper = null;
         // A theme can also switch the wallpaper off while the file is still there.
@@ -252,10 +253,12 @@ final class Config {
             // explicit theme push or reset by the updated tools.
             SharedPreferences.Editor editor = choices.edit();
             if (!"absent".equals(token)) editor.remove(Contract.Key.COLUMNS).remove(Contract.Key.ANIMATIONS)
-                    .remove(Contract.Key.ADVANCED_EFFECTS);
+                    .remove(Contract.Key.ADVANCED_EFFECTS).remove(Contract.Key.BACKGROUND_COLOR)
+                    .remove(HomeLook.BACKDROP_KEY);
             editor.putString(THEME_SIGNATURE_KEY, signature).commit();
         } else if (!seen.equals(signature)) {
             choices.edit().remove(Contract.Key.COLUMNS).remove(Contract.Key.ANIMATIONS).remove(Contract.Key.ADVANCED_EFFECTS)
+                    .remove(Contract.Key.BACKGROUND_COLOR).remove(HomeLook.BACKDROP_KEY)
                     .putString(THEME_SIGNATURE_KEY, signature).commit();
         }
     }

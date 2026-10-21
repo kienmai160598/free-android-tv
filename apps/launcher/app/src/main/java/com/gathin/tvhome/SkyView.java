@@ -3,6 +3,7 @@ package com.gathin.tvhome;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.CornerPathEffect;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.RadialGradient;
@@ -19,7 +20,11 @@ import java.util.Calendar;
 /**
  * A full-screen gradient that follows the clock: night blues, a warm horizon at sunset, a soft
  * glow that travels with the sun. Off by default (config.xml, sky_intensity = 0); a theme turns
- * it on with {@code "sky_intensity": 60}.
+ * it on with {@code "sky_intensity": 60}, Launcher settings with the Sky background.
+ *
+ * It follows the weather widget's last report too: cloud, rain or snow tint the gradient (Sky.weathered),
+ * and the weather is drawn over it in M3 Expressive shapes (WeatherShapes). A report older than a few hours
+ * counts as no report, a clear sky.
  *
  * Like the ambient glow, the backdrop is one small bitmap (480x270) stretched over the screen:
  * a gradient repainted at full resolution every minute is exactly the CPU cost the ambient glow
@@ -42,6 +47,15 @@ public class SkyView extends View {
     private int lastMinute = -1;
     private Bitmap texture;
     private BitmapDrawable drawable;
+    private static final long WEATHER_KEPT_MS = 3 * 60 * 60_000L;
+    /** Day for the sun and moon when the report is stale: 06:00 to 18:30. */
+    private static final int DAY_FROM = 360, DAY_UNTIL = 1110;
+    private Weather.Sky weather = Weather.Sky.CLEAR;
+    private boolean day = true;
+    private final WeatherShapes shapes = new WeatherShapes();
+    private final Paint sunPaint = fill(0xD9FFD27A), moonPaint = fill(0xE6EDE9FF), starPaint = fill(0x99FFFFFF);
+    private final Paint cloudPaint = fill(0x52FFFFFF), boltPaint = fill(0xD9FFE27A), snowPaint = fill(0xB3FFFFFF);
+    private final Paint fogPaint = fill(0x29FFFFFF), rainPaint = stroke(0x80C8DCFF);
 
     public SkyView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
@@ -67,13 +81,27 @@ public class SkyView extends View {
         if (intensity > 0) render(true);
     }
 
+    private static Paint fill(int color) {
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paint.setColor(color);
+        return paint;
+    }
+
+    private static Paint stroke(int color) {
+        Paint paint = fill(color);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeCap(Paint.Cap.ROUND);
+        return paint;
+    }
+
     private void render(boolean force) {
         Calendar now = Calendar.getInstance();
         int minute = Sky.minuteOfDay(now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE));
         if (!force && minute == lastMinute) return;
         lastMinute = minute;
+        readWeather(minute);
 
-        Sky.Palette sky = Sky.at(minute);
+        Sky.Palette sky = Sky.weathered(Sky.at(minute), weather);
         if (texture == null) texture = Bitmap.createBitmap(TEX_W, TEX_H, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(texture);
         canvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
@@ -100,5 +128,39 @@ public class SkyView extends View {
             setBackground(drawable);
         }
         invalidate();
+    }
+
+    /** The widget's last report, if recent; its day or night while fresh, else the clock's. */
+    private void readWeather(int minute) {
+        Weather.Report report = Weather.cached(getContext());
+        long now = System.currentTimeMillis();
+        boolean known = report != null && now - report.fetchedAt < WEATHER_KEPT_MS;
+        Weather.Sky nowWeather = known ? Weather.sky(report.code) : Weather.Sky.CLEAR;
+        boolean nowDay = known && !report.stale(now) ? report.day : minute >= DAY_FROM && minute < DAY_UNTIL;
+        if (nowWeather == weather && nowDay == day) return;
+        weather = nowWeather;
+        day = nowDay;
+        shapes.build(getWidth(), getHeight(), weather, day);
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        shapes.build(w, h, weather, day);
+        rainPaint.setStrokeWidth(h * 0.006f);
+        boltPaint.setPathEffect(new CornerPathEffect(h * 0.006f));
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+        canvas.drawPath(shapes.fog, fogPaint);
+        canvas.drawPath(shapes.stars, starPaint);
+        canvas.drawPath(shapes.sun, sunPaint);
+        canvas.drawPath(shapes.moon, moonPaint);
+        canvas.drawPath(shapes.rain, rainPaint);
+        canvas.drawPath(shapes.snow, snowPaint);
+        canvas.drawPath(shapes.clouds, cloudPaint);
+        canvas.drawPath(shapes.bolt, boltPaint);
     }
 }

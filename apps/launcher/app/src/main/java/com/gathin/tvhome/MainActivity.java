@@ -89,15 +89,23 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private static final int LAUNCHER_SETTINGS_REQUEST = 42;
     /** Sent by QuickSettingsActivity: open Launcher settings from here so Home rebuilds when they close. */
     static final String ACTION_LAUNCHER_SETTINGS = "com.gathin.tvhome.action.LAUNCHER_SETTINGS";
+    /** InputKeyService on a TV without a system input switcher: Home with its Inputs menu open. */
+    static final String ACTION_SHOW_INPUTS = "com.gathin.tvhome.action.SHOW_INPUTS";
     /** Tiles per row and dock slots (res/values/config.xml, columns). Set in onCreate. */
     static int COLUMNS = 4;
     private static final String COLUMNS_SETTING = "columns";
     private SharedPreferences settingsPreferences;
     private Config homeConfig;
     private final SharedPreferences.OnSharedPreferenceChangeListener liveSettings = (preferences, key) -> {
-        if (!COLUMNS_SETTING.equals(key)) return;
-        int columns = preferences.getInt(key, COLUMNS);
-        if (columns != COLUMNS) applyColumns(columns);
+        if (COLUMNS_SETTING.equals(key)) {
+            int columns = preferences.getInt(key, COLUMNS);
+            if (columns != COLUMNS) applyColumns(columns);
+        } else if (Contract.Key.BACKGROUND_COLOR.equals(key) && !wallpaperShown()) {
+            // Launcher settings sits over Home: the new scheme shows behind its sheet at once.
+            Palette.publish(Palette.fromBackground(Config.load(this).backgroundColor));
+        } else if (HomeLook.BACKDROP_KEY.equals(key)) {
+            applyBackdrop(HomeLook.backdrop(preferences));
+        }
     };
     private boolean rtlAppGrid;
     private static final long MINUTE_MS = 60_000L;
@@ -122,6 +130,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private boolean advancedEffects;
     private TextView greeting;
     private View btnInputs;
+    private PopupWindow inputsPopup;
     private TextView btnWifi;
     private TextView shamsiDate;
     private TextView stats;
@@ -318,14 +327,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         root = findViewById(R.id.root);
         root.setBackgroundColor(cfg.backgroundColor);
         wallpaperPlayer = new WallpaperPlayer(this, root, cfg);
-        if (!wallpaperPlayer.showing()) {
-            // No wallpaper: the M3E shapes backdrop, in the scheme seeded from background_color.
-            backdrop = new ExpressiveBackdrop(this, animations, reducedMotion);
-            root.addView(backdrop, 0, new FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        }
         sky = findViewById(R.id.sky);
-        sky.setIntensity(cfg.skyIntensity);
+        applyBackdrop(HomeLook.backdrop(settingsPreferences));
         glass = findViewById(R.id.glass);
         if (festive) glass.setAccent(festival.accentColor());
         glass.animate().setUpdateListener(a -> grid.invalidate());
@@ -625,7 +628,17 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                     .build(), vpnCallback);
         }
         // Not after recreate(): the launch intent survives it and would open the settings again.
-        if (savedInstanceState == null) openLauncherSettingsIfAsked(getIntent());
+        if (savedInstanceState == null && !openLauncherSettingsIfAsked(getIntent())) showInputsIfAsked(getIntent());
+    }
+
+    private boolean showInputsIfAsked(Intent intent) {
+        if (intent == null || !ACTION_SHOW_INPUTS.equals(intent.getAction())) return false;
+        setIntent(new Intent(Intent.ACTION_MAIN));
+        // After layout: the menu hangs from the Inputs pill, which must be measured and shown.
+        btnInputs.post(() -> {
+            if (btnInputs.getVisibility() == View.VISIBLE) showInputs();
+        });
+        return true;
     }
 
     private boolean openLauncherSettingsIfAsked(Intent intent) {
@@ -643,7 +656,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        if (openLauncherSettingsIfAsked(intent)) return;
+        if (openLauncherSettingsIfAsked(intent) || showInputsIfAsked(intent)) return;
         if (intent == null || !intent.hasCategory(Intent.CATEGORY_HOME)) return;
         // Leaving an app sends Home this same intent on this box (from the system, not only the Home key):
         // coming back keeps the place. Only Home pressed on Home itself goes back to the first tile.
@@ -899,6 +912,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     public void onConfigurationChanged(@NonNull android.content.res.Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Palette.loadDarkMode(this);
+        applyBackdrop(HomeLook.backdrop(settingsPreferences));   // the sky's strength follows the appearance
     }
 
     @Override
@@ -1387,6 +1401,26 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     /** Re-skins a popup or dialog panel in M3E with the current scheme. */
     private void skin(View panel) {
         M3Skin.apply(panel, Palette.currentOrBaseline(), animations, reducedMotion);
+    }
+
+    /**
+     * What Launcher settings chose behind the apps. Without a wallpaper the M3E shapes, in the scheme seeded from
+     * background_color, are the default; the sky is the time-of-day gradient; plain leaves the scheme's surface.
+     */
+    private void applyBackdrop(String style) {
+        boolean shapes = HomeLook.SHAPES.equals(style) && !wallpaperPlayer.showing();
+        if (shapes && backdrop == null) {
+            backdrop = new ExpressiveBackdrop(this, animations, reducedMotion);
+            root.addView(backdrop, 0, new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            if (shownPalette != null) backdrop.setPalette(shownPalette);
+        } else if (!shapes && backdrop != null) {
+            handler.removeCallbacks(startBackdrop);
+            backdrop.stop();
+            root.removeView(backdrop);
+            backdrop = null;
+        }
+        sky.setIntensity(HomeLook.skyIntensity(style, homeConfig.skyIntensity, Palette.darkMode()));
     }
 
     private boolean wallpaperShown() {
@@ -2124,8 +2158,15 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     /** Switches to a passthrough input (HDMI, AV). The standard way is ACTION_VIEW on its channel URI,
      *  which the Live TV app handles; where nothing takes that, the configured `input_action` is sent
-     *  with the same URI instead (XGIMI's HDMI player only answers com.xgimi.action.hdmiPlayer). */
+     *  with the same URI instead (XGIMI's HDMI player only answers com.xgimi.action.hdmiPlayer).
+     *  Xiaomi's player goes first where it is installed: there a catch-all viewer (a file manager) would
+     *  take the ACTION_VIEW. */
     private void openInput(String inputId) {
+        Intent xiaomi = xiaomiInput(inputId);
+        if (xiaomi != null) {
+            open(xiaomi);
+            return;
+        }
         Uri uri = TvContract.buildChannelUriForPassthroughInput(inputId);
         Intent view = new Intent(Intent.ACTION_VIEW).setDataAndType(uri, "vnd.android.cursor.item/channel")
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -2141,8 +2182,28 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         open(new Intent(inputAction).setDataAndType(uri, "vnd.android.cursor.item/channel"));
     }
 
+    /** Xiaomi's player on this input, numbered by its port's label; null without the player or the number. */
+    private Intent xiaomiInput(String inputId) {
+        if (getPackageManager().resolveActivity(new Intent().setComponent(XiaomiInputs.EXTERNAL_SOURCE), 0) == null) {
+            return null;
+        }
+        TvInputManager tim = (TvInputManager) getSystemService(TV_INPUT_SERVICE);
+        TvInputInfo info = tim == null ? null : tim.getTvInputInfo(inputId);
+        if (info == null) return null;
+        // A device behind a port (HDMI-CEC "Playback_1") switches to its port.
+        TvInputInfo port = info.getParentId() == null ? null : tim.getTvInputInfo(info.getParentId());
+        CharSequence label = (port != null ? port : info).loadLabel(this);
+        int source = XiaomiInputs.source(label == null ? null : label.toString());
+        return source < 0 ? null : XiaomiInputs.intent(source);
+    }
+
     /** Dropdown menu under the Inputs pill: HDMI ports (with connection state), AV and Live TV. */
     private void showInputs() {
+        // The Menu button again (InputKeyService) closes it instead of stacking another.
+        if (inputsPopup != null && inputsPopup.isShowing()) {
+            inputsPopup.dismiss();
+            return;
+        }
         View anchor = findViewById(R.id.btnInputs);
         View panel = getLayoutInflater().inflate(R.layout.popup_inputs, root, false);
         LinearLayout rows = panel.findViewById(R.id.rows);
@@ -2150,6 +2211,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         // Compact: as wide as the Inputs pill (a touch wider so "HDMI 1" fits), hanging right below it.
         int width = Math.max(anchor.getWidth(), (int) (150 * density));
         final PopupWindow popup = glassPopup(panel, width);
+        inputsPopup = popup;
 
         TvInputManager tim = (TvInputManager) getSystemService(TV_INPUT_SERVICE);
         boolean sawNonHdmi = false;

@@ -1,5 +1,6 @@
 package com.gathin.tvhome;
 
+import android.animation.ObjectAnimator;
 import android.view.animation.Interpolator;
 
 import androidx.dynamicanimation.animation.SpringAnimation;
@@ -82,6 +83,19 @@ final class Motion {
         /** A one-shot ViewPropertyAnimator move on this spring: its curve and its settle time. */
         android.view.ViewPropertyAnimator drive(android.view.ViewPropertyAnimator animator) {
             return animator.setInterpolator(interpolator()).setDuration(durationMs());
+        }
+
+        /**
+         * A view's opacity to {@code alpha} on this spring, after {@code delayMs}, on its own animator: a view
+         * has one ViewPropertyAnimator with one curve, so a fade beside a spatial move needs its own.
+         */
+        ObjectAnimator fade(android.view.View view, float alpha, long delayMs) {
+            ObjectAnimator fade = ObjectAnimator.ofFloat(view, android.view.View.ALPHA, alpha);
+            fade.setInterpolator(interpolator());
+            fade.setDuration(durationMs());
+            fade.setStartDelay(delayMs);
+            fade.start();
+            return fade;
         }
 
         /** How long the spring takes to settle within 0.1% of its target, for the animator's duration. */

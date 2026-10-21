@@ -97,6 +97,8 @@ func handHomeOver(dev tv.Device, stock string, out io.Writer) {
 	tv.Batch(dev, []string{
 		"pm grant " + tv.Launcher + " android.permission.ACCESS_FINE_LOCATION 2>/dev/null; " +
 			"echo location-granted",
+		"pm grant " + tv.Launcher + " android.permission.WRITE_SECURE_SETTINGS 2>/dev/null; " +
+			"echo settings-granted",
 		"cmd package compile -m speed -f " + tv.Launcher,
 		disableStock,
 		"cmd package set-home-activity --user 0 " + tv.LauncherActivity,

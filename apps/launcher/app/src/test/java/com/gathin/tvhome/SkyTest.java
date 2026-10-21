@@ -65,4 +65,34 @@ public class SkyTest {
     private static double luma(int color) {
         return (0.2126 * ((color >> 16) & 0xFF) + 0.7152 * ((color >> 8) & 0xFF) + 0.0722 * (color & 0xFF)) / 255.0;
     }
+
+    @Test
+    public void aClearSkyIsTheTimeOfDayAlone() {
+        Sky.Palette noon = Sky.at(780);
+        Sky.Palette clear = Sky.weathered(noon, Weather.Sky.CLEAR);
+        assertEquals(noon.bottom, clear.bottom);
+        assertEquals(noon.sun, clear.sun);
+    }
+
+    @Test
+    public void rainDarkensAndGreysTheSkyAndHidesTheSun() {
+        Sky.Palette noon = Sky.at(780);
+        Sky.Palette rain = Sky.weathered(noon, Weather.Sky.RAIN);
+        assertTrue(Sky.luminance(rain.bottom) < Sky.luminance(noon.bottom));
+        assertTrue(Sky.chroma(rain.bottom) < Sky.chroma(noon.bottom));
+        assertEquals(0, rain.sun);
+    }
+
+    @Test
+    public void snowIsBrighterThanRain() {
+        Sky.Palette noon = Sky.at(780);
+        assertTrue(Sky.luminance(Sky.weathered(noon, Weather.Sky.SNOW).bottom)
+                > Sky.luminance(Sky.weathered(noon, Weather.Sky.RAIN).bottom));
+    }
+
+    @Test
+    public void nightStaysDarkUnderFog() {
+        Sky.Palette night = Sky.weathered(Sky.at(60), Weather.Sky.FOG);
+        assertTrue(Sky.luminance(night.bottom) < 40);
+    }
 }

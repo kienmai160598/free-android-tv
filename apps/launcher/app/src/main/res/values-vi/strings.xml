@@ -201,4 +201,35 @@
     <string name="boot_options_message">Chọn TV sẽ làm gì tiếp theo</string>
     <string name="restart_desc">Tắt rồi bật lại TV</string>
     <string name="power_off_desc">Chế độ chờ, bấm nút nguồn trên remote để bật lại</string>
+    <string name="settings_group_look">Giao diện</string>
+    <string name="look_color">Màu chủ đạo</string>
+    <string name="look_color_theme">Theo theme</string>
+    <string-array name="look_seed_names">
+        <item>Tím</item>
+        <item>Xanh dương</item>
+        <item>Xanh mòng két</item>
+        <item>Xanh lá</item>
+        <item>Cam</item>
+        <item>Hồng</item>
+        <item>Đỏ</item>
+    </string-array>
+    <string name="look_backdrop">Hình nền</string>
+    <string name="look_backdrop_shapes">Hình khối Expressive</string>
+    <string name="look_backdrop_sky">Bầu trời theo giờ trong ngày</string>
+    <string name="look_backdrop_plain">Nền trơn</string>
+    <string name="look_backdrop_wallpaper">Hình nền của theme</string>
+    <string name="settings_group_screensaver">Bảo vệ màn hình</string>
+    <string name="screensaver_after">Bật sau</string>
+    <string name="screensaver_never">Không bao giờ</string>
+    <plurals name="screensaver_minutes">
+        <item quantity="other">%d phút</item>
+    </plurals>
+    <string name="screensaver_denied">Cần chạy tvctl install để đổi thời gian bảo vệ màn hình</string>
+    <string name="screensaver_style">Kiểu đồng hồ</string>
+    <string name="screensaver_style_shapes">Hình khối chuyển động</string>
+    <string name="screensaver_style_glow">Ánh màu</string>
+    <string name="screensaver_style_minimal">Tối giản, tối màu</string>
+    <string name="screensaver_style_large">Đồng hồ lớn</string>
+    <string name="menu_inputs">Nút Menu mở Inputs</string>
+    <string name="menu_inputs_desc">Nút ba gạch hiện danh sách HDMI và các nguồn vào, ở mọi app</string>
 </resources>

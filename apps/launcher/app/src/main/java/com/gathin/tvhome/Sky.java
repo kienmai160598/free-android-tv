@@ -94,6 +94,47 @@ final class Sky {
                 lerp(a.sunX, b.sunX, t));
     }
 
+    /**
+     * The sky under the weather: cloud greys it and keeps less of the sun's glow, rain and thunder darken it,
+     * fog and snow lighten it. Brightness is scaled rather than mixed towards a colour, so night stays night.
+     */
+    static Palette weathered(Palette clear, Weather.Sky weather) {
+        switch (weather) {
+            case PARTLY: return covered(clear, 0.20f, 1.00f, 0.70f);
+            case CLOUDY: return covered(clear, 0.60f, 1.05f, 0.25f);
+            case FOG: return covered(clear, 0.75f, 1.15f, 0f);
+            case RAIN: return covered(clear, 0.55f, 0.80f, 0f);
+            case THUNDER: return covered(clear, 0.45f, 0.65f, 0f);
+            case SNOW: return covered(clear, 0.70f, 1.25f, 0f);
+            default: return clear;
+        }
+    }
+
+    private static Palette covered(Palette clear, float grey, float brightness, float sun) {
+        return new Palette(cover(clear.top, grey, brightness), cover(clear.mid, grey, brightness),
+                cover(clear.bottom, grey, brightness), Math.round(clear.sun * sun), clear.sunX);
+    }
+
+    private static int cover(int color, float grey, float brightness) {
+        int l = luminance(color);
+        int greyed = lerpColor(color, 0xFF000000 | l << 16 | l << 8 | l, grey);
+        int r = Math.min(255, Math.round(((greyed >> 16) & 0xFF) * brightness));
+        int g = Math.min(255, Math.round(((greyed >> 8) & 0xFF) * brightness));
+        int b = Math.min(255, Math.round((greyed & 0xFF) * brightness));
+        return 0xFF000000 | r << 16 | g << 8 | b;
+    }
+
+    /** Perceived brightness of an opaque colour, 0 to 255. */
+    static int luminance(int color) {
+        return (((color >> 16) & 0xFF) * 299 + ((color >> 8) & 0xFF) * 587 + (color & 0xFF) * 114) / 1000;
+    }
+
+    /** How coloured it is: the spread between its strongest and weakest channel, 0 to 255. */
+    static int chroma(int color) {
+        int r = (color >> 16) & 0xFF, g = (color >> 8) & 0xFF, b = color & 0xFF;
+        return Math.max(r, Math.max(g, b)) - Math.min(r, Math.min(g, b));
+    }
+
     /** Minute of day, 0 to 1439, of a wall clock time. */
     static int minuteOfDay(int hour, int minute) {
         return Math.max(0, Math.min(23, hour)) * 60 + Math.max(0, Math.min(59, minute));
