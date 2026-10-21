@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/media/home.gif" alt="km-launcher on a TCL Google TV: the dock, widgets and header" width="880">
+  <img src="docs/media/home-2.gif" alt="km-launcher on a TCL Google TV: the dock, widgets and header" width="880">
 </p>
 
 - **Debloat:** lists for 108 TV models switch off telemetry, ads and preloads. Nothing is uninstalled,
@@ -49,10 +49,10 @@
 ## Screens
 
 <p align="center">
-  <img src="docs/media/home.png" alt="Home" width="49%">
-  <img src="docs/media/scrolled.png" alt="Rows scrolling under the header" width="49%">
-  <img src="docs/media/settings.png" alt="Launcher settings" width="49%">
-  <img src="docs/media/dream.png" alt="Clock screensaver" width="49%">
+  <img src="docs/media/home-2.png" alt="Home" width="49%">
+  <img src="docs/media/scrolled-2.png" alt="Rows scrolling under the header" width="49%">
+  <img src="docs/media/settings-2.png" alt="Launcher settings" width="49%">
+  <img src="docs/media/dream-2.png" alt="Clock screensaver" width="49%">
 </p>
 
 ## Under the hood
