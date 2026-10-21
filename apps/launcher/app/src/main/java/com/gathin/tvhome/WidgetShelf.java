@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.color.utilities.Blend;
 import com.google.android.material.color.utilities.Hct;
 
+import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -837,12 +838,27 @@ final class WidgetShelf {
         }
     }
 
-    /** "1.4 / 2.0 GB": the unit once, when both sizes share it, so the meter's name keeps its room. */
+    /**
+     * "1.4 / 2.0 GB": the unit once, when both sizes share it, so the meter's name keeps its room. Under
+     * a gigabyte of a total in gigabytes reads "0.8 / 1.6 GB", not "843 MB / 1.6 GB" (which cut "Memory" short).
+     */
     private String usedOf(long used, long total) {
         String u = size(used), t = size(total);
         int cut = lastSpace(t);
-        if (cut > 0 && lastSpace(u) > 0 && u.substring(lastSpace(u)).equals(t.substring(cut))) u = u.substring(0, lastSpace(u));
+        boolean sameUnit = cut > 0 && lastSpace(u) > 0 && u.substring(lastSpace(u)).equals(t.substring(cut));
+        if (sameUnit) u = u.substring(0, lastSpace(u));
+        else if (total >= GIGABYTE && used < GIGABYTE) u = oneDecimal(used / (double) GIGABYTE);
         return activity.getString(R.string.widget_used_of, u, t);
+    }
+
+    /** Formatter's gigabyte since Android 8. */
+    private static final long GIGABYTE = 1_000_000_000L;
+
+    private static String oneDecimal(double value) {
+        NumberFormat format = NumberFormat.getNumberInstance();
+        format.setMinimumFractionDigits(1);
+        format.setMaximumFractionDigits(1);
+        return format.format(value);
     }
 
     private static int lastSpace(String s) {

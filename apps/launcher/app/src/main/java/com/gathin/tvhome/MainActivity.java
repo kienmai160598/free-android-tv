@@ -2205,6 +2205,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
 
         // Fit the widest row: TVs that report a status on every port (Sony) would otherwise squeeze the names out.
+        // Skinned first: the M3 rows are wider than the bare layout, and measuring before cut the names short.
+        skin(panel);
         panel.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
         popup.setWidth(Math.max(width, Math.min(panel.getMeasuredWidth(), (int) (360 * density))));
 
@@ -2229,22 +2231,26 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     /**
      * Drop in: fade and unfold from the top edge, hanging under the anchor pill. A menu taller than the
      * room under the anchor is capped to the larger room, below or above it (the window then opens
-     * above when that is larger), and its rows scroll.
+     * above when that is larger), and its rows scroll. The room is the window's own: the visible display
+     * frame ends near the dock on Xiaomi's China firmware (MiTV-ASTP0), which cut Inputs and widget menus short.
      */
     private void dropIn(PopupWindow popup, View panel, View anchor, int gravity) {
         skin(panel);
-        Rect frame = new Rect();
-        anchor.getWindowVisibleDisplayFrame(frame);
+        // Flat like on Android 14: the popup window is the panel's size, so Android 9 cut its shadow
+        // into a grey band along the bottom edge.
+        panel.setElevation(0f);
         int[] at = new int[2];
         anchor.getLocationInWindow(at);
         int gap = (int) (10 * density), margin = (int) (24 * density);
-        int below = frame.bottom - (at[1] + anchor.getHeight() + gap) - margin;
-        int above = at[1] - frame.top - gap - margin;
+        int below = anchor.getRootView().getHeight() - (at[1] + anchor.getHeight() + gap) - margin;
+        int above = at[1] - gap - margin;
         int width = popup.getWidth() > 0 ? popup.getWidth() : anchor.getWidth();
         panel.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
         int height = panel.getMeasuredHeight();
         popup.setHeight(height > below ? Math.min(height, Math.max(below, above)) : ViewGroup.LayoutParams.WRAP_CONTENT);
+        // A menu wider than the room right of its pill hangs from the pill's end instead of the screen edge.
+        if (gravity == Gravity.START && at[0] + width > anchor.getRootView().getWidth() - margin) gravity = Gravity.END;
         panel.setAlpha(0f);
         panel.setPivotY(0f);
         panel.setScaleY(0.92f);
