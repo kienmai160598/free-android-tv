@@ -14,9 +14,9 @@
 # - Network ADB (port 5555) closes on every reboot; re-enable it in
 #   Settings -> Account & Security -> ADB debugging after each power cycle. Wi-Fi also sleeps in
 #   standby, so the TV drops off the network until it is woken.
-# - mitv.service is the core MiTV service: do not touch it. Payment (com.mipay.wallet.tv,
-#   com.xiaomi.mitv.pay, com.xiaomi.mitv.payment), Mi Home (com.xiaomi.smarthome.tv), the voice
-#   assistant (minus its wake word) and casting are kept.
+# - mitv.service is the core MiTV service: do not touch it. The owner chose to drop payment, Mi Home,
+#   Mi Video, the voice assistant and every casting receiver but AirPlay (in com.xiaomi.mitv.smartshare).
+#   The app store and com.mitv.videoplayer (USB files) stay.
 # - com.xiaomi.mitv.remotecontroller.service looped at 100-150% CPU after Home changed hands and
 #   flooded logd (~490 MB in 30 min); am force-stop it. ES File Explorer runs DLNA and a WebView
 #   in the background: cmd appops set com.estrongs.android.pop RUN_IN_BACKGROUND ignore.
@@ -50,3 +50,32 @@ com.xiaomi.screenrecorder
 com.xiaomi.mitv.smartpanel              # smart home panel
 com.xiaomi.mitv.calendar
 com.xiaomi.tweather                     # CN weather
+com.mitv.screensaver                    # Xiaomi screensaver; km-launcher ClockDream instead (screensaver_components, screen_off_timeout 600000)
+com.xiaomi.mitv.healthdiagnosis        # TV self-diagnosis
+com.xiaomi.mitv.legal.webview           # terms and privacy viewer
+com.android.printspooler                # printing
+com.xiaomi.mibox.lockscreen             # child lock screen
+
+# Casting except AirPlay (com.xiaomi.mitv.smartshare keeps .mairplay.AirPlayService on port 47000)
+com.xiaomi.miplay                       # MiPlay, Xiaomi phone casting
+com.duokan.airkan.tvbox                 # AirKan DLNA
+com.xiaomi.wfdsinkhelperservice         # Miracast sink helper
+com.xiaomi.mi_connect_service           # Mi Connect phone link
+
+# Chinese voice assistant (owner's choice)
+com.xiaomi.voicecontrol
+com.xiaomi.mico.mqtt.service.application.tv   # Xiao AI speaker link
+
+# Chinese payment (owner's choice)
+com.mipay.wallet.tv
+com.xiaomi.mitv.pay
+com.xiaomi.mitv.payment
+
+# Content (owner's choice)
+com.mitv.mivideoplayer                  # Mi Video, CN streaming; com.mitv.videoplayer still plays USB files
+com.xiaomi.smarthome.tv                 # Mi Home on the TV
+
+# Keyboard: LeanKey (org.liskovsoft.androidtv.rukeyboard, GitHub yuliskov/LeanKeyboard) is the default
+# IME now: ime enable/set .../com.liskovsoft.leankeyboard.ime.LeanbackImeService. Re-enable Sogou
+# before removing LeanKey, or the TV has no keyboard.
+com.sohu.inputmethod.sogou.tv
