@@ -4,6 +4,7 @@
 
 <p align="center">
   <a href="#quick-start">Quick start</a>&nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://github.com/kienmai160598/freeTV/releases/latest">Download</a>&nbsp;&nbsp;&nbsp;&nbsp;
   <a href="packages/debloat-lists/">Supported TVs</a>&nbsp;&nbsp;&nbsp;&nbsp;
   <a href="docs/prompt.md">Agent prompt</a>
 </p>
@@ -42,6 +43,9 @@
 
 3. When you are done, turn debugging off and reboot the TV.
 
+- No build tools: the [latest release](https://github.com/kienmai160598/freeTV/releases/latest) has
+  `km-launcher.apk` and tvctl for macOS, Linux and Windows. Install it with
+  `tvctl install --input-key-service km-launcher.apk`.
 - Undo: `scripts/tvctl restore packages/debloat-lists/<your-tv>/debloat.txt`
 - Change the look: `scripts/tvctl theme packages/themes/<theme>`
 - Windows: use `scripts\tvctl.ps1`

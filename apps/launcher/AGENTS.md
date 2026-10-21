@@ -3,7 +3,7 @@
 Android TV home screen, package `com.gathin.tvhome`, minSdk 26, target 34. Plain Java with AndroidX
 RecyclerView and DynamicAnimation plus `app/libs/material-color-utilities` (no Kotlin, no Compose).
 Built for 1 GB TVs: no blur, no video, no polling, no background work beyond what is listed here.
-Release APK: `app/build/outputs/apk/release/km-launcher.apk`, R8 on, debug-signed, CI fails over 700 KB.
+Release APK: `app/build/outputs/apk/release/km-launcher.apk`, R8 on, debug-signed, CI fails over 700 KB. A `v*` tag publishes it to a GitHub release (`.github/workflows/release.yml`), signed with the key in the `KM_KEYSTORE_BASE64` secret and the `KM_KEYSTORE_PASSWORD`, `KM_KEY_ALIAS`, `KM_KEY_PASSWORD` secrets; `-PkmVersion` sets versionName from the tag.
 Locales: English and Vietnamese only.
 
 ## Components (names are stored on TVs, never rename or move)

@@ -11,9 +11,23 @@ android {
         minSdk 26
         targetSdk 34
         versionCode 5
-        versionName '1.0.0 (beta)'
+        // A release sets it from its tag (-PkmVersion=1.1.0); the code stays put, so a local build still installs over it.
+        versionName findProperty('kmVersion') ?: '1.0.0 (beta)'
         // English and Vietnamese only: other locales were removed, and this keeps library strings out too.
         resourceConfigurations += ['en', 'vi']
+    }
+
+    signingConfigs {
+        // GitHub releases are signed with the owner's key from the repo's secrets (release.yml), so a downloaded
+        // APK installs over a local build. Without KM_KEYSTORE, builds keep Android's debug key.
+        if (System.getenv('KM_KEYSTORE')) {
+            release {
+                storeFile file(System.getenv('KM_KEYSTORE'))
+                storePassword System.getenv('KM_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('KM_KEY_ALIAS')
+                keyPassword System.getenv('KM_KEY_PASSWORD')
+            }
+        }
     }
 
     buildTypes {
@@ -22,8 +36,8 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            // Sideloaded over ADB, never published: sign with the debug key so it installs over a debug build.
-            signingConfig signingConfigs.debug
+            // Sideloaded over ADB, never on a store: the debug key, or the release key when CI has it.
+            signingConfig System.getenv('KM_KEYSTORE') ? signingConfigs.release : signingConfigs.debug
         }
     }
 
