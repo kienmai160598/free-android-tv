@@ -24,7 +24,9 @@
 #   com.mitv.tvhome disabled Home falls to com.android.tv.settings/.system.FallbackHome.
 # - km-launcher follows the system's night mode, which this firmware has no setting for:
 #   cmd uimode night yes|no|auto. Auto needs a location for sunset and the TV has none, so it
-#   stays in day mode. The time zone ships as Asia/Shanghai.
+#   stays in day mode.
+# - The time zone ships as Asia/Shanghai, an hour ahead in Vietnam. Set the one the IP locates
+#   (get.geojs.io/v1/ip/geo.json "timezone"): service call alarm 3 s16 Asia/Ho_Chi_Minh
 # - Picture: Settings -> Image settings -> Display model is kept per source; "Picture" is the vivid
 #   one (contrast 55, saturation 60, cold), "Standard" is flat.
 
