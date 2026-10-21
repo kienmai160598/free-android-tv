@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/tv"
+	"github.com/kienmai160598/freeTV/apps/tvctl/internal/tv"
 )
 
-const rescueCommands = "# free-android-tv: the launcher handover on %[1]s did not finish. " +
+const rescueCommands = "# freeTV: the launcher handover on %[1]s did not finish. " +
 	"From the repo root:\n" +
 	"scripts/tvctl --host %[1]s shell 'pm enable --user 0 %[2]s'\n" +
 	"scripts/tvctl --host %[1]s shell '%[3]s'\n" +
@@ -55,7 +55,7 @@ func writeRescueCommands(stock string, opts Options) string {
 		directory, _ = os.UserHomeDir()
 	}
 
-	fileName := "free-android-tv-handover-" + tv.FileNameSafe(opts.Host) + ".txt"
+	fileName := "freeTV-handover-" + tv.FileNameSafe(opts.Host) + ".txt"
 	path := filepath.Join(directory, fileName)
 
 	commands := fmt.Sprintf(rescueCommands, opts.Host, stock, tv.SetHomeTo(stock), tv.HomeQuery)

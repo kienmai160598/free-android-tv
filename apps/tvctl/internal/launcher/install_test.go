@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/tv"
-	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/tv/tvtest"
+	"github.com/kienmai160598/freeTV/apps/tvctl/internal/tv"
+	"github.com/kienmai160598/freeTV/apps/tvctl/internal/tv/tvtest"
 )
 
 const stockHome = tv.StockLauncher + "/.MainActivity"
@@ -102,7 +102,7 @@ func handover(t *testing.T, f *fakeTV, opts Options) outcome {
 	var out, warn bytes.Buffer
 	err := Install(dev, filepath.Join(dir, "app-release.apk"), opts, &out, &warn)
 	o := outcome{err: err, out: out.String(), warn: warn.String(), commands: dev.Commands}
-	if files, _ := filepath.Glob(filepath.Join(dir, "free-android-tv-handover-*.txt")); len(
+	if files, _ := filepath.Glob(filepath.Join(dir, "freeTV-handover-*.txt")); len(
 		files,
 	) == 1 {
 		data, _ := os.ReadFile(files[0])

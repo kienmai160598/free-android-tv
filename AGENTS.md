@@ -1,4 +1,4 @@
-# free-android-tv
+# freeTV
 
 Debloat Android TV / Google TV over network ADB, then install km-launcher as Home.
 Fork of Gathin23/cleanyourtv (MIT).

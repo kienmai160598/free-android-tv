@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/contract"
+	"github.com/kienmai160598/freeTV/apps/tvctl/internal/contract"
 )
 
 const homeIntent = "-a android.intent.action.MAIN -c android.intent.category.HOME"

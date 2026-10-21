@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/tv"
+	"github.com/kienmai160598/freeTV/apps/tvctl/internal/tv"
 )
 
 func ReadList(path string) ([]string, error) {

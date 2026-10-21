@@ -1,6 +1,6 @@
 # tvctl
 
-Go 1.22, standard library only. Module `github.com/kienmai160598/free-android-tv/apps/tvctl`.
+Go 1.22, standard library only. Module `github.com/kienmai160598/freeTV/apps/tvctl`.
 
 | Package | Responsibility |
 |---|---|
@@ -30,7 +30,7 @@ Go 1.22, standard library only. Module `github.com/kienmai160598/free-android-tv
   host, then it asks for `--record`.
 - `install`: push APK to `/data/local/tmp`, `pm install -r`, `am start -W` must say `Status: ok`
   with no `Error` line, then disable stock and set Home, then confirm Home; else roll back and, if
-  that fails too, write `~/free-android-tv-handover-<host>.txt`.
+  that fails too, write `~/freeTV-handover-<host>.txt`.
 - Every behaviour that changes what reaches a TV has a test against `tvtest.Fake`; protocol changes
   are tested against the fake adbd in `internal/adb/adb_test.go` (4 KB packets like Android 5).
 

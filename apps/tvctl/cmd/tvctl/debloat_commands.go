@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/debloat"
-	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/tv"
+	"github.com/kienmai160598/freeTV/apps/tvctl/internal/debloat"
+	"github.com/kienmai160598/freeTV/apps/tvctl/internal/tv"
 )
 
 func (a *app) disable(args []string) error {

@@ -1,80 +1,70 @@
-# free-android-tv
+<div align="center">
 
-Debloat an Android TV or Google TV over Wi-Fi and give it **km-launcher**, a Material 3 Expressive
-home screen. No root and nothing uninstalled, so every change can be undone.
+# 📺 freeTV
 
-- **Debloat:** ready-made lists for 108 TV models switch off telemetry, ads and preloads, and
-  record what they changed so it can be put back.
-- **km-launcher:** dock and app grid, widgets (weather, air quality, system info, calendar), backdrops
-  (moving shapes, a sky that follows the weather, wallpaper), a clock screensaver, an Inputs menu,
-  remote buttons that work again, themes. English and Vietnamese.
+**Debloat your Android TV. Give it a Material 3 Expressive home screen.**
 
-## Quick start
+No root · nothing uninstalled · everything undoable
 
-On the TV: Settings → Device Preferences → About → press **Build** 7 times, then Developer options
-→ **USB debugging** on (and Network debugging if the TV has it).
+[![Pipeline](https://github.com/kienmai160598/freeTV/actions/workflows/pipeline.yml/badge.svg)](https://github.com/kienmai160598/freeTV/actions/workflows/pipeline.yml)
+![Root](https://img.shields.io/badge/root-not_needed-7c4dff)
+![TV models](https://img.shields.io/badge/TV_models-108-00bfa5)
+![Android](https://img.shields.io/badge/Android_TV-8.0%2B-3ddc84?logo=android&logoColor=white)
+![Licence](https://img.shields.io/badge/licence-MIT-ff6d00)
 
-### With a coding assistant
+</div>
 
-Paste this into Claude Code, Codex or any agent that can run commands:
-
-```text
-Read https://github.com/kienmai160598/free-android-tv/blob/main/docs/prompt.md and follow it.
-My TV: <brand and model, or "find out">. Its IP: <ip, or "find it on my network">.
-```
-
-The agent clones the repo and does everything in [`docs/prompt.md`](docs/prompt.md): it backs up the
-TV, debloats it, fixes the time zone and night mode, installs the launcher and maps the remote. It
-asks you before anything that depends on how you use the TV.
-
-### By hand
-
-Needs [Go](https://go.dev/dl) 1.27+, plus JDK 17 and Android SDK 34 for the launcher.
-
-```bash
-git clone https://github.com/kienmai160598/free-android-tv && cd free-android-tv
-export TV_HOST=192.168.1.50                                      # the TV's IP
-scripts/tvctl probe                                              # accept "Allow USB debugging?"
-scripts/tvctl disable packages/debloat-lists/<your-tv>/debloat.txt
-make install                                                     # km-launcher becomes Home
-```
-
-When you are done, turn debugging off on the TV, reboot it, and check with `scripts/tvctl closed`.
-
-| To | Run |
-|---|---|
-| Undo the debloat | `scripts/tvctl restore packages/debloat-lists/<your-tv>/debloat.txt` |
-| Change the look | `scripts/tvctl theme packages/themes/<theme>` |
-| Use Windows | `scripts\tvctl.ps1` and `apps\launcher\build-and-install.ps1 -TvHost <ip>` |
-
-Model not listed? The agent prompt builds a list for it; the format is in
-[`packages/debloat-lists/`](packages/debloat-lists/).
-
-## Supported
+## ✨ What you get
 
 | | |
 |---|---|
-| TVs | Android TV and Google TV 8.0+; Fire TV for debloating only |
-| Computers | macOS, Linux, Windows (amd64 and arm64) |
-| Launcher languages | English, Vietnamese (follows the TV) |
+| 🧹 **Debloat** | Telemetry, ads and preloads off, with a record to put them back |
+| 🏠 **km-launcher** | Dock, app grid, Edit Home, themes |
+| 🌤️ **Widgets** | Weather, air quality, system info, calendar |
+| 🎨 **Backdrops** | Moving shapes, a sky that follows the weather, wallpaper |
+| 🕐 **Screensaver** | Clock in four styles |
+| 🎛️ **Remote** | Inputs menu, Netflix / YouTube / gear buttons working again |
 
-## Repository
+## 🚀 Quick start
 
-| Path | What | Stack |
+**1. On the TV:** About → press **Build** 7× → Developer options → **USB debugging** on.
+
+**2a. 🤖 Let an agent do it:** paste into Claude Code, Codex or similar:
+
+```text
+Read https://github.com/kienmai160598/freeTV/blob/main/docs/prompt.md and follow it.
+My TV: <brand and model, or "find out">. Its IP: <ip, or "find it on my network">.
+```
+
+**2b. 🛠️ Or by hand** (Go 1.27+, JDK 17, Android SDK 34):
+
+```bash
+git clone https://github.com/kienmai160598/freeTV && cd freeTV
+export TV_HOST=192.168.1.50
+scripts/tvctl probe                                              # accept on the TV
+scripts/tvctl disable packages/debloat-lists/<your-tv>/debloat.txt
+make install
+```
+
+| | |
+|---|---|
+| ↩️ **Undo** | `scripts/tvctl restore packages/debloat-lists/<your-tv>/debloat.txt` |
+| 🎨 **Theme** | `scripts/tvctl theme packages/themes/<theme>` |
+| 🔒 **Close ADB** | debugging off, reboot, `scripts/tvctl closed` |
+| 🪟 **Windows** | `scripts\tvctl.ps1`, `apps\launcher\build-and-install.ps1 -TvHost <ip>` |
+
+## 🧩 Inside
+
+| | | |
 |---|---|---|
-| `apps/tvctl` | CLI: its own ADB client, debloat and restore, launcher install, themes | Go, standard library only |
-| `apps/launcher` | km-launcher (`com.gathin.tvhome`) | Java 17, Android SDK 34 (minSdk 26), AndroidX, Material Color Utilities |
-| `packages/contract` | Names and config keys shared by both apps, generated into Go and Java | JSON |
-| `packages/debloat-lists`, `packages/themes` | One list per TV model; theme overlays | text, JSON |
+| `apps/tvctl` | Go CLI with its own ADB client | ![Go](https://img.shields.io/badge/Go-00ADD8?logo=go&logoColor=white) |
+| `apps/launcher` | km-launcher, English + Vietnamese | ![Java](https://img.shields.io/badge/Java_17-E76F00?logo=openjdk&logoColor=white) |
+| `packages/` | Debloat lists, themes, shared contract | ![JSON](https://img.shields.io/badge/JSON-5e5e5e?logo=json&logoColor=white) |
 
-`make help` lists the tasks and `make check` runs what CI runs. Conventions are in
-[`AGENTS.md`](AGENTS.md).
+Runs on 🍎 macOS · 🐧 Linux · 🪟 Windows. Developers: [`AGENTS.md`](AGENTS.md), `make check`.
 
-## Credits and licence
+## 💜 Credits
 
-Forked from [**Gathin23/cleanyourtv**](https://github.com/Gathin23/cleanyourtv) by **Gathin**, whose
-project and contributors wrote the debloat lists. This fork rewrites the tools in Go, redesigns the
-launcher and reorganises the repository.
-
-MIT, see [`LICENSE`](LICENSE), including the original cleanyourtv copyright. Google Sans Flex: SIL
-Open Font License. Material Color Utilities: Apache 2.0.
+Forked from [**Gathin23/cleanyourtv**](https://github.com/Gathin23/cleanyourtv). The debloat lists
+come from Gathin and the cleanyourtv contributors. [MIT](LICENSE); Google Sans Flex under the
+SIL OFL, Material Color Utilities under Apache 2.0.

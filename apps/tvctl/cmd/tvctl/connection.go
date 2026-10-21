@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/adb"
-	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/tv"
+	"github.com/kienmai160598/freeTV/apps/tvctl/internal/adb"
+	"github.com/kienmai160598/freeTV/apps/tvctl/internal/tv"
 )
 
 var errMissingHost = errors.New("set the TV's IP address with --host or TV_HOST, " +

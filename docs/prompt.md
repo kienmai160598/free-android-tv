@@ -1,4 +1,4 @@
-# Task: set up an Android TV with free-android-tv
+# Task: set up an Android TV with freeTV
 
 You are a coding assistant with a shell. The owner gives you the TV's model and IP address, or asks
 you to find them. Debloat the TV, fix its settings and install km-launcher as Home, working on the
@@ -8,7 +8,7 @@ Finish is done.
 
 ## Prepare
 
-- Clone `https://github.com/kienmai160598/free-android-tv` unless you are already in it, and read
+- Clone `https://github.com/kienmai160598/freeTV` unless you are already in it, and read
   `AGENTS.md` and `docs/troubleshooting.md`.
 - Needs Go 1.27+ for `scripts/tvctl`, plus JDK 17 and Android SDK 34 for the launcher. Install what is
   missing or tell the owner how.

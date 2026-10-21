@@ -1,7 +1,7 @@
 blank_issues_enabled: true
 contact_links:
   - name: Question or "does it work on my TV?"
-    url: https://github.com/kienmai160598/free-android-tv/issues
+    url: https://github.com/kienmai160598/freeTV/issues
     about: Open an issue with your TV model and Android version.
   - name: Upstream project (cleanyourtv)
     url: https://github.com/Gathin23/cleanyourtv

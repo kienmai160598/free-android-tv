@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/adb"
+	"github.com/kienmai160598/freeTV/apps/tvctl/internal/adb"
 )
 
 type Device interface {

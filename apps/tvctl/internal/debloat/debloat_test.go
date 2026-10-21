@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/tv"
-	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/tv/tvtest"
+	"github.com/kienmai160598/freeTV/apps/tvctl/internal/tv"
+	"github.com/kienmai160598/freeTV/apps/tvctl/internal/tv/tvtest"
 )
 
 const (

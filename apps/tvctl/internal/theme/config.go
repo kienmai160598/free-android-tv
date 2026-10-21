@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/contract"
-	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/tv"
+	"github.com/kienmai160598/freeTV/apps/tvctl/internal/contract"
+	"github.com/kienmai160598/freeTV/apps/tvctl/internal/tv"
 )
 
 var colorValue = regexp.MustCompile(`^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$`)

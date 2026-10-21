@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
-	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/launcher"
-	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/theme"
-	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/tv"
+	"github.com/kienmai160598/freeTV/apps/tvctl/internal/launcher"
+	"github.com/kienmai160598/freeTV/apps/tvctl/internal/theme"
+	"github.com/kienmai160598/freeTV/apps/tvctl/internal/tv"
 )
 
 const installUsage = "install [--stock <package|none>] [--input-key-service] " +

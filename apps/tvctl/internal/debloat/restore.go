@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/kienmai160598/free-android-tv/apps/tvctl/internal/tv"
+	"github.com/kienmai160598/freeTV/apps/tvctl/internal/tv"
 )
 
 const listDisabledPackages = "pm list packages -d"

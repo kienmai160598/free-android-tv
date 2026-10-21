@@ -260,7 +260,7 @@
     <string name="about_source">Source</string>
     <string name="about_author_name" translatable="false">Kien Mai Trung</string>
     <string name="about_email_value" translatable="false">kien.mai.trung.98@gmail.com</string>
-    <string name="about_source_value" translatable="false">github.com/kienmai160598/free-android-tv</string>
+    <string name="about_source_value" translatable="false">github.com/kienmai160598/freeTV</string>
     <string name="setting_opens">Opens on</string>
     <string name="page_now">Now</string>
     <string name="page_details">Details</string>
