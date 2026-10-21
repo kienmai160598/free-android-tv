@@ -52,7 +52,7 @@
             android:textSize="14sp"
             android:fontFamily="@font/sans_regular" />
 
-        <ScrollView
+        <com.gathin.tvhome.FocusScrollView
             android:id="@+id/rowsScroll"
             android:layout_width="match_parent"
             android:layout_height="0dp"
@@ -66,7 +66,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical" />
-        </ScrollView>
+        </com.gathin.tvhome.FocusScrollView>
 
         <LinearLayout
             android:id="@+id/footer"

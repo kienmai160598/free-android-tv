@@ -99,6 +99,8 @@ func handHomeOver(dev tv.Device, stock string, out io.Writer) {
 			"echo location-granted",
 		"pm grant " + tv.Launcher + " android.permission.WRITE_SECURE_SETTINGS 2>/dev/null; " +
 			"echo settings-granted",
+		"appops set " + tv.Launcher + " REQUEST_INSTALL_PACKAGES allow 2>/dev/null; " +
+			"echo installs-allowed",
 		"cmd package compile -m speed -f " + tv.Launcher,
 		disableStock,
 		"cmd package set-home-activity --user 0 " + tv.LauncherActivity,

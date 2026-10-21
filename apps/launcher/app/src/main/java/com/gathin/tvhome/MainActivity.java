@@ -1516,7 +1516,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private void applyBackdrop(String style) {
         boolean shapes = HomeLook.SHAPES.equals(style) && !wallpaperPlayer.showing();
         if (shapes && backdrop == null) {
-            backdrop = new ExpressiveBackdrop(this, animations, reducedMotion);
+            backdrop = new ExpressiveBackdrop(this, animations, reducedMotion, advancedEffects);
             root.addView(backdrop, 0, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             if (shownPalette != null) backdrop.setPalette(shownPalette);

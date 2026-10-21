@@ -8,7 +8,6 @@ import android.view.Window;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.StateListDrawable;
 import android.media.tv.TvInputInfo;
 import android.media.tv.TvInputManager;
 import android.app.Dialog;
@@ -78,6 +77,9 @@ public final class LauncherSettingsActivity extends Activity {
     private int columns;
     private boolean animations;
     private boolean advancedEffects;
+    private TextView updateChoice;
+    private LauncherRelease offeredRelease;
+    private boolean updateBusy;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -142,6 +144,7 @@ public final class LauncherSettingsActivity extends Activity {
         showLook(config);
         showScreensaver(config);
         showHomeStatus();
+        showUpdate();
         showAbout();
         refresh();
         View sheet = findViewById(R.id.sheet);
@@ -154,7 +157,9 @@ public final class LauncherSettingsActivity extends Activity {
         View scrim = findViewById(R.id.scrim);
         sideSheet = new SideSheet(this, scrim, sheet, config);
         scrim.setOnClickListener(v -> sideSheet.close());
-        sideSheet.slideIn((ViewGroup) ((ViewGroup) findViewById(R.id.settingsScroll)).getChildAt(0));
+        FocusScrollView settingsScroll = findViewById(R.id.settingsScroll);
+        settingsScroll.setMotion(config.animations, config.reducedMotion);
+        sideSheet.slideIn((ViewGroup) settingsScroll.getChildAt(0));
         columnsChoice.requestFocus();
     }
 
@@ -239,26 +244,107 @@ public final class LauncherSettingsActivity extends Activity {
      * with no icons or arrows. It takes focus so the remote reaches it, but OK does nothing: focus only turns its
      * outline into the primary focus ring, where the rows that act fill in.
      */
-    private void showAbout() {
-        float d = getResources().getDisplayMetrics().density;
-        LinearLayout card = findViewById(R.id.aboutCard);
-        StateListDrawable outline = new StateListDrawable();
-        outline.addState(new int[]{android.R.attr.state_focused}, outline(palette.primary, 2 * d, d));
-        outline.addState(new int[0], outline(palette.outlineVariant, d, d));
-        card.setBackground(outline);
-        card.setFocusable(true);
-
-        aboutItem(card, R.string.about_version, versionName(), d);
-        aboutItem(card, R.string.about_author, getString(R.string.about_author_name), d);
-        aboutItem(card, R.string.about_email, getString(R.string.about_email_value), d);
-        aboutItem(card, R.string.about_source, getString(R.string.about_source_value), d);
+    private void showUpdate() {
+        updateChoice = findViewById(R.id.updateChoice);
+        updateChoice.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                icon(R.drawable.ic_system_update), null, null, null);
+        updateChoice.setOnClickListener(v -> onUpdateChosen());
+        checkForUpdate();
     }
 
-    private static GradientDrawable outline(int color, float width, float d) {
-        GradientDrawable outline = new GradientDrawable();
-        outline.setCornerRadius(Shapes.LARGE_INCREASED * d);
-        outline.setStroke(Math.max(1, Math.round(width)), color);
-        return outline;
+    private void checkForUpdate() {
+        String installed = versionName();
+        updateBusy = true;
+        showUpdateState(getString(R.string.update_checking, installed));
+        worker.execute(() -> {
+            try {
+                LauncherRelease latest = LauncherRelease.latest();
+                runOnUiThread(() -> showRelease(latest, installed));
+            } catch (IOException e) {
+                runOnUiThread(() -> showUpdateFailure(R.string.update_check_failed));
+            }
+        });
+    }
+
+    private void showRelease(LauncherRelease latest, String installed) {
+        updateBusy = false;
+        offeredRelease = latest.isNewerThan(installed) ? latest : null;
+        if (offeredRelease == null) {
+            showUpdateState(getString(R.string.update_current, installed));
+            return;
+        }
+
+        showUpdateState(getString(R.string.update_available, latest.version,
+                latest.apkSize / 1024));
+    }
+
+    private void onUpdateChosen() {
+        if (updateBusy) return;
+
+        if (offeredRelease == null) {
+            checkForUpdate();
+            return;
+        }
+
+        if (!getPackageManager().canRequestPackageInstalls()) {
+            askToAllowInstalls();
+            return;
+        }
+
+        downloadAndInstall(offeredRelease);
+    }
+
+    private void downloadAndInstall(LauncherRelease release) {
+        updateBusy = true;
+        showUpdateState(getString(R.string.update_downloading, 0));
+        worker.execute(() -> {
+            try {
+                ReleaseInstaller.install(getApplicationContext(), release, percent ->
+                        runOnUiThread(() ->
+                                showUpdateState(getString(R.string.update_downloading, percent))));
+                runOnUiThread(() -> {
+                    updateBusy = false;
+                    showUpdateState(getString(R.string.update_installing));
+                });
+            } catch (IOException e) {
+                runOnUiThread(() -> showUpdateFailure(R.string.update_download_failed));
+            }
+        });
+    }
+
+    private void askToAllowInstalls() {
+        Intent allow = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                Uri.fromParts("package", getPackageName(), null));
+        try {
+            startActivity(allow);
+        } catch (ActivityNotFoundException | SecurityException e) {
+            showUpdateState(getString(R.string.update_needs_permission));
+        }
+    }
+
+    private void showUpdateFailure(int message) {
+        updateBusy = false;
+        showUpdateState(getString(message));
+    }
+
+    private void showUpdateState(String status) {
+        updateChoice.setText(item(getString(R.string.update_title), status));
+    }
+
+    private void showAbout() {
+        showAboutRow(R.id.aboutVersion, R.drawable.ic_info, R.string.about_version, versionName());
+        showAboutRow(R.id.aboutAuthor, R.drawable.ic_person, R.string.about_author,
+                getString(R.string.about_author_name));
+        showAboutRow(R.id.aboutEmail, R.drawable.ic_mail, R.string.about_email,
+                getString(R.string.about_email_value));
+        showAboutRow(R.id.aboutSource, R.drawable.ic_code, R.string.about_source,
+                getString(R.string.about_source_value));
+    }
+
+    private void showAboutRow(int rowId, int iconRes, int label, String value) {
+        TextView row = findViewById(rowId);
+        row.setText(item(getString(label), value));
+        row.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(iconRes), null, null, null);
     }
 
     private String versionName() {
@@ -267,18 +353,6 @@ public final class LauncherSettingsActivity extends Activity {
         } catch (PackageManager.NameNotFoundException e) {
             return "";
         }
-    }
-
-    /** One About entry as the sheet's rows write it, a label over one line of value, but with no row around it. */
-    private void aboutItem(LinearLayout card, int label, String value, float d) {
-        TextView t = new TextView(this);
-        t.setText(item(getString(label), value));
-        t.setTextSize(15f);
-        t.setLineSpacing(2 * getResources().getDisplayMetrics().scaledDensity, 1f);
-        t.setTypeface(getResources().getFont(R.font.sans_medium));
-        t.setTextColor(0xFFFFFFFF);   // M3Skin: onSurface
-        t.setPadding((int) (18 * d), (int) (8 * d), (int) (16 * d), (int) (8 * d));
-        card.addView(t);
     }
 
     private String name() {

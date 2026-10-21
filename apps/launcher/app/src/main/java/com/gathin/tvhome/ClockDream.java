@@ -76,7 +76,8 @@ public class ClockDream extends DreamService {
 
         style = Screensaver.style(getSharedPreferences(Config.SETTINGS_NAME, MODE_PRIVATE));
         if (Screensaver.SHAPES.equals(style)) {
-            shapes = new ExpressiveBackdrop(this, config.animations, config.reducedMotion);
+            shapes = new ExpressiveBackdrop(this, config.animations, config.reducedMotion,
+                    config.advancedEffects);
             shapes.setPalette(p);
             shapes.setBackgroundColor(0xFF000000);
             shapes.setAlpha(SHAPES_ALPHA);
