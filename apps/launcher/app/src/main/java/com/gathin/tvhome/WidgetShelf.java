@@ -858,14 +858,15 @@ final class WidgetShelf {
 
     /**
      * "1.4 / 2.0 GB": the unit once, when both sizes share it, so the meter's name keeps its room. Under
-     * a gigabyte of a total in gigabytes reads "0.8 / 1.6 GB", not "843 MB / 1.6 GB" (which cut "Memory" short).
+     * a gigabyte of a total in gigabytes reads "0.8 / 1.6 GB", not "843 MB / 1.6 GB" or the Formatter's
+     * "0.91 GB" past 900 MB (both cut "Memory" short).
      */
     private String usedOf(long used, long total) {
         String u = size(used), t = size(total);
         int cut = lastSpace(t);
         boolean sameUnit = cut > 0 && lastSpace(u) > 0 && u.substring(lastSpace(u)).equals(t.substring(cut));
-        if (sameUnit) u = u.substring(0, lastSpace(u));
-        else if (total >= GIGABYTE && used < GIGABYTE) u = oneDecimal(used / (double) GIGABYTE);
+        if (total >= GIGABYTE && used < GIGABYTE) u = oneDecimal(used / (double) GIGABYTE);
+        else if (sameUnit) u = u.substring(0, lastSpace(u));
         return activity.getString(R.string.widget_used_of, u, t);
     }
 
