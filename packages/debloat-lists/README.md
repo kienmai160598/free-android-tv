@@ -112,6 +112,7 @@ quirks) are in the comment header of its `debloat.txt`; read it before applying.
 | `xiaomi-mitv-mooq0/` | Xiaomi Mi TV (MiTV-MOOQ0, croods) | Android TV 10 |
 | `xiaomi-mi-tv-4a/` | Xiaomi Mi TV 4A (MiTV-MOOQ1) | Android TV 10 |
 | `xiaomi-mitv-aesp0/` | Xiaomi MiTV-AESP0 stick (aquaman, 1 GB) | Android TV 9 |
+| `xiaomi-mitv-astp0/` | Xiaomi MiTV-ASTP0 (mulan, L55M7-EA), China firmware 22.12.2.1630, 1.5 GB RAM, 1080p | Android TV 9 (CN build) |
 | `xiaomi-mitv-astp1/` | Xiaomi MiTV-ASTP1 (maverick), China firmware 2.40.641.0514.cn, 1 GB RAM, 720p | Android TV 9 (CN build) |
 | `xiaomi-mitv-axfr1/` | Xiaomi MiTV-AXFR1 (rango, Amlogic, 1 GB), India | Android TV 11 |
 | `xiaomi-mitv-axso0/` | Xiaomi MiTV-AXSO0 (dangal; Mi TV 4C Pro 2019 / 4A Pro) | Android TV 9 |

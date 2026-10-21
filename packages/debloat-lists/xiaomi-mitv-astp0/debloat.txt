@@ -1,0 +1,52 @@
+# Xiaomi MiTV-ASTP0 (codename mulan; China-market firmware, sold as L55M7-EA), Android 9 (SDK 28),
+# firmware 22.12.2.1630, Amlogic/droidlogic, 1.5 GB RAM, 1080p panel. Used in Vietnam.
+# Stock launcher: com.mitv.tvhome (HOME activity .MainActivityUserMode). It is not in
+# KNOWN_STOCK_LAUNCHERS, so install with: STOCK_LAUNCHER=com.mitv.tvhome apps/launcher/build-and-install.sh
+#
+# Apply:   TV_HOST=<tv ip> scripts/tvctl disable packages/debloat-lists/xiaomi-mitv-astp0/debloat.txt
+# Undo:    TV_HOST=<tv ip> scripts/tvctl restore packages/debloat-lists/xiaomi-mitv-astp0/debloat.txt com.mitv.tvhome
+# Everything is DISABLED, not uninstalled. Comment out any line you want to keep.
+#
+# Notes from this firmware:
+# - Same family as xiaomi-mitv-astp1; this list starts from that one, minus what this build lacks
+#   (com.gitvdemo.video, com.duokan.videodaily, com.xiaomi.tv.gallery, com.newtv.cboxtv).
+# - No CN streaming apps preinstalled; no Google apps besides the YouTube and katniss the owner sideloaded.
+# - Network ADB (port 5555) closes on every reboot; re-enable it in
+#   Settings -> Account & Security -> ADB debugging after each power cycle. Wi-Fi also sleeps in
+#   standby, so the TV drops off the network until it is woken.
+# - mitv.service is the core MiTV service: do not touch it. Payment (com.mipay.wallet.tv,
+#   com.xiaomi.mitv.pay, com.xiaomi.mitv.payment), Mi Home (com.xiaomi.smarthome.tv), the voice
+#   assistant (minus its wake word) and casting are kept.
+# - com.xiaomi.mitv.remotecontroller.service looped at 100-150% CPU after Home changed hands and
+#   flooded logd (~490 MB in 30 min); am force-stop it. ES File Explorer runs DLNA and a WebView
+#   in the background: cmd appops set com.estrongs.android.pop RUN_IN_BACKGROUND ignore.
+# - Home stays com.mitv.tvhome: set-home-activity succeeds but resolution ignores it, and with
+#   com.mitv.tvhome disabled Home falls to com.android.tv.settings/.system.FallbackHome.
+
+# Xiaomi telemetry / push / cloud control
+com.miui.analytics
+com.miui.tv.analytics
+com.xiaomi.statistic
+com.mitv.cloudcontrol
+com.xiaomi.mitv.tvpush.tvpushservice
+com.android.smspush
+
+# Ads / promoted content / shopping
+com.xm.webcontent
+com.mitv.shoplugin                      # TV shopping channel plugin
+com.xiaomi.mitv.shop                    # Xiaomi shop
+
+# Xiaomi background services
+com.xiaomi.mitv.tvmanager               # "TV Manager" cleaner
+com.xiaomi.mitv.upgrade                 # firmware updates: re-enable to check for one
+com.xiaomi.gamecenter.sdk.service.mibox
+com.xiaomi.mitv.karaoke.service
+com.xiaomi.wakeupservice                # Chinese wake word for the voice assistant, ~30% CPU all the time
+
+# Preloaded apps not used
+com.xiaomi.mimusic2                     # Mi Music
+com.mitv.gallery                        # Media Explorer still opens USB photos
+com.xiaomi.screenrecorder
+com.xiaomi.mitv.smartpanel              # smart home panel
+com.xiaomi.mitv.calendar
+com.xiaomi.tweather                     # CN weather
