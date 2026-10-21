@@ -19,6 +19,7 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
     static final float PADDING_DP = 12f;
 
     private int dockSize;
+    private boolean rtl;
     private final float density;
     private final Paint band = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF rect = new RectF();
@@ -47,7 +48,29 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
             // ends 32dp above the next row's tiles, the grid's rhythm.
             outRect.top = 0;
             outRect.bottom = (int) (12 * density);
+            // A dock with fewer apps than columns sits in the middle, like Apple's; the container hugs it.
+            int shift = centringShift(parent, state);
+            outRect.left = shift;
+            outRect.right = -shift;
         }
+    }
+
+    /** How far each dock tile moves so a short dock is centred: half the empty columns' width. */
+    private int centringShift(RecyclerView parent, RecyclerView.State state) {
+        RecyclerView.Adapter<?> adapter = parent.getAdapter();
+        if (adapter == null) return 0;
+        int tiles = 0;
+        int count = Math.min(dockSize, state.getItemCount());
+        for (int i = 0; i < count; i++) if (adapter.getItemViewType(i) == AppAdapter.TILE_VIEW) tiles++;
+        if (tiles == 0 || tiles >= dockSize) return 0;
+        float column = (parent.getWidth() - parent.getPaddingLeft() - parent.getPaddingRight()) / (float) dockSize;
+        int shift = Math.round((dockSize - tiles) * column / 2f);
+        return rtl ? -shift : shift;
+    }
+
+    /** rtl_app_grid: the grid lays out right to left, so the tiles move left. */
+    void setRtl(boolean rtl) {
+        this.rtl = rtl;
     }
 
     @Override

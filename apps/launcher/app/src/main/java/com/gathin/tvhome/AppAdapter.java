@@ -367,7 +367,7 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        if (viewType == 1) {
+        if (viewType == LIBRARY_VIEW) {
             View row = LayoutInflater.from(ctx).inflate(R.layout.row_app_library, parent, false);
             View button = row.findViewById(R.id.btnLibrary);
             M3Skin.apply(row, Palette.currentOrBaseline(), animations, reducedMotion);
@@ -486,7 +486,10 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     boolean isLibraryAt(int position) { return showLibrary && position == items.size(); }
 
-    @Override public int getItemViewType(int position) { return isLibraryAt(position) ? 1 : 0; }
+    /** View types: an app tile (or an empty dock slot), and the library row. */
+    static final int TILE_VIEW = 0, LIBRARY_VIEW = 1;
+
+    @Override public int getItemViewType(int position) { return isLibraryAt(position) ? LIBRARY_VIEW : TILE_VIEW; }
 
     boolean containsPackage(String pkg) {
         for (Entry entry : items) if (entry.pkg.equals(pkg)) return true;

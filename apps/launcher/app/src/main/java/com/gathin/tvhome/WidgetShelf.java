@@ -116,6 +116,8 @@ final class WidgetShelf {
     private static final float ENTER_SCALE = 0.85f;
     private int lastColumns = MAX_CARDS, lastDockTop;
     private int cellOrigin, cellPitch, cellWidth, tilePitch;
+    /** The dock's first tile and how many tiles it has, for moving focus between cards and apps. */
+    private int dockLeft, dockTiles = 1;
     private final TextView weatherPlace, weatherTemp, weatherDetail;
     private final ShapeBadge weatherIcon;
     private final TextView ramValue, storageValue;
@@ -573,7 +575,10 @@ final class WidgetShelf {
         host.showMenu(anchor, items);
     }
 
-    /** How many cards fit: one per dock column, at most four. */
+    /**
+     * How many cards fit: one per dock column, at most four. The shelf spans the full row of columns even
+     * when the dock holds fewer apps: DockDecoration centres a short dock, so the full row is centred on it.
+     */
     private boolean measureDock(RecyclerView grid, int columns) {
         int itemCount = grid.getAdapter() == null ? 0 : grid.getAdapter().getItemCount();
         int lastColumn = Math.max(0, Math.min(columns, itemCount) - 1);
@@ -582,13 +587,20 @@ final class WidgetShelf {
         Rect last = tileBounds(grid, lastColumn);
         if (first == null || last == null || (lastColumn > 0 && second == null)) return false;
 
-        int gap = second == null ? 0 : second.left - first.right;
+        int tileWidth = first.width();
+        int pitch = second != null ? Math.abs(second.left - first.left)
+                : (grid.getWidth() - grid.getPaddingLeft() - grid.getPaddingRight()) / Math.max(1, columns);
+        int gap = pitch - tileWidth;
+        int tilesLeft = Math.min(first.left, last.left);
+        int centre = (tilesLeft + Math.max(first.right, last.right)) / 2;
+        int rowWidth = (columns - 1) * pitch + tileWidth;
         int cells = slotsLimit();
-        int dockWidth = last.right - first.left;
-        cellOrigin = first.left;
-        cellWidth = (dockWidth - gap * (cells - 1)) / cells;
+        cellOrigin = centre - rowWidth / 2;
+        cellWidth = (rowWidth - gap * (cells - 1)) / cells;
         cellPitch = cellWidth + gap;
-        tilePitch = (dockWidth + gap) / (lastColumn + 1);
+        tilePitch = pitch;
+        dockLeft = tilesLeft;
+        dockTiles = lastColumn + 1;
         return true;
     }
 
@@ -604,14 +616,14 @@ final class WidgetShelf {
 
     private int dockColumnUnderCard(int card) {
         if (tilePitch <= 0) return card;
-        int center = card * cellPitch + cellWidth / 2;
-        return Math.max(0, Math.min(lastColumns - 1, center / tilePitch));
+        int centre = cellOrigin + card * cellPitch + cellWidth / 2;
+        return Math.max(0, Math.min(dockTiles - 1, Math.floorDiv(centre - dockLeft, tilePitch)));
     }
 
     private int cardOverDockColumn(int column) {
         if (cellPitch <= 0) return column;
-        int center = column * tilePitch + tilePitch / 2;
-        return center / cellPitch;
+        int centre = dockLeft + column * tilePitch + tilePitch / 2;
+        return Math.max(0, Math.floorDiv(centre - cellOrigin, cellPitch));
     }
 
     private int slotsLimit() {
@@ -692,6 +704,7 @@ final class WidgetShelf {
         if (!measureDock(grid, columns)) return;
 
         int inset = Math.round(WidgetCard.REACH_DP * density);
+        boolean moved = false;
         for (int index = 0; index < slots.size(); index++) {
             WidgetCard card = slots.get(index);
             FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) card.getLayoutParams();
@@ -701,8 +714,13 @@ final class WidgetShelf {
                 lp.leftMargin = left;
                 lp.width = width;
                 card.setLayoutParams(lp);
+                moved = true;
             }
         }
+        // A focused card that moved (the dock re-centred under it) fires no focus change: follow it once laid out.
+        if (moved) shelf.post(() -> {
+            for (WidgetCard card : slots) highlight.follow(card);
+        });
         ViewGroup.MarginLayoutParams slp = (ViewGroup.MarginLayoutParams) shelf.getLayoutParams();
         int top = Math.max(0, (dockTop - slp.height) / 2);
         if (slp.topMargin != top) {

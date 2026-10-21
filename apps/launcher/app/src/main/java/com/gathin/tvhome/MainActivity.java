@@ -417,6 +417,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         });
         if (dockRow) {
             dockDecoration = new DockDecoration(COLUMNS, density);
+            dockDecoration.setRtl(rtlAppGrid);
             grid.addItemDecoration(dockDecoration);
         }
         // Added after the dock container, so it draws above the container and below the tiles.
@@ -425,6 +426,23 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         // The GlassView stays as the springs' model; the indicator draws where it is.
         glass.setVisibility(View.INVISIBLE);
         adapter = new AppAdapter(this, this, COLUMNS, cfg);
+        // A dock that gains or loses an app re-centres: offsets are cached per tile until invalidated.
+        adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
+            @Override
+            public void onChanged() {
+                recentreDock();
+            }
+
+            @Override
+            public void onItemRangeInserted(int positionStart, int itemCount) {
+                recentreDock();
+            }
+
+            @Override
+            public void onItemRangeRemoved(int positionStart, int itemCount) {
+                recentreDock();
+            }
+        });
         dockApps = cfg.dockApps;
         fillDockLeavesSlots = !cfg.fillDock;
         adapter.setSavedOrder(Order.ranks(Order.load(Order.file(this)), dockApps));
@@ -715,6 +733,24 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (grid.getPaddingTop() != want) {
             grid.setPadding(grid.getPaddingLeft(), want, grid.getPaddingRight(), grid.getPaddingBottom());
         }
+    }
+
+    /** Lays the dock out again so DockDecoration centres it for its current number of apps. */
+    private void recentreDock() {
+        if (dockDecoration == null) return;
+        grid.post(() -> {
+            grid.invalidateItemDecorations();
+            grid.post(this::followFocusedTile);   // after the layout that asks for
+        });
+    }
+
+    /** A focused tile that moved without losing focus fires no focus change: bring the glass to it. */
+    private void followFocusedTile() {
+        View focused = grid.getFocusedChild();
+        if (focused == null) return;
+        int position = grid.getChildAdapterPosition(focused);
+        View card = focused.findViewById(R.id.card);
+        if (position >= 0 && card != null && card.isFocused()) onTileFocused(position, card);
     }
 
     private void applyColumns(int columns) {
