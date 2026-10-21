@@ -32,6 +32,11 @@ final class XiaomiInputs {
         return upper.startsWith("AV") ? AV : -1;
     }
 
+    /** Xiaomi's player is in front: an HDMI or AV input is on screen. */
+    static boolean isPlayer(CharSequence packageName) {
+        return PLAYER.contentEquals(packageName);
+    }
+
     static Intent intent(int source) {
         return new Intent(ACTION).setComponent(EXTERNAL_SOURCE).putExtra(EXTRA_SOURCE, source);
     }

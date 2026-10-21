@@ -39,7 +39,7 @@ import java.util.function.IntConsumer;
  * dock column, so they line up with the apps below them.
  * <ul>
  *   <li>Weather ({@link Weather}): OK steps from now (temperature and range) to how it feels (humidity, wind) to tomorrow (high, low, chance of rain).</li>
- *   <li>This TV: CPU load (every few seconds, {@link CpuMeter}), memory and storage in use; OK opens the TV's storage settings. (Android 14 lets an app
+ *   <li>This TV: CPU load (every few seconds, {@link CpuMeter}), memory and storage in use, to read only. (Android 14 lets an app
  *       end only its own background processes, so a launcher cannot free other apps' memory itself.)</li>
  *   <li>Air quality: the US AQI and PM2.5 at the weather's place ({@link AirQuality}), its band in the
  *       band's colour harmonised with the scheme; OK switches between now and tomorrow's worst hour.</li>
@@ -67,8 +67,6 @@ final class WidgetShelf {
     /** What the shelf needs from Home: its menus, the storage page, and a say when the cards change. */
     interface Host {
         void showMenu(View anchor, List<MenuItem> items);
-
-        void openStorage();
 
         /** The cards on the shelf changed: the header's Down target may have moved. */
         void slotsChanged();
@@ -238,7 +236,6 @@ final class WidgetShelf {
             cards[0].turn(this::paintWeather);
             refreshWeather(false);
         });
-        cards[1].setOnClickListener(v -> host.openStorage());
         cards[2].setOnClickListener(v -> {
             airTomorrow = !airTomorrow;
             cards[2].turn(this::paintAir);

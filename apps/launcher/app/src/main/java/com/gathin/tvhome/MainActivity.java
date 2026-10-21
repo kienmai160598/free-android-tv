@@ -202,8 +202,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private boolean cameBackFromBackground;
     /** The list has had its one reveal (Home's first appearance). */
     private boolean gridRevealed;
-    private final Runnable startBackdrop = () -> {
-        if (this.backdrop != null) this.backdrop.start();
+    private final Runnable startBackdrop = this::wakeBackdrop;
+    /**
+     * The shapes rest after this long without a key, so an idle Home draws nothing: moving, they kept the
+     * RenderThread at about 40% of a core on the Mi Box S. A key sets them going again.
+     */
+    private static final long BACKDROP_IDLE_MS = 30_000;
+    private final Runnable restBackdrop = () -> {
+        if (this.backdrop != null) this.backdrop.stop();
     };
     private static final long BACKDROP_RESUME_DELAY_MS = 400;
     private static final float REVEAL_BLUR_DP = 24f;
@@ -463,11 +469,6 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             @Override
             public void showMenu(View anchor, List<WidgetShelf.MenuItem> items) {
                 showWidgetMenu(anchor, items);
-            }
-
-            @Override
-            public void openStorage() {
-                open(systemIntent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS));
             }
 
             @Override
@@ -874,6 +875,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         super.onPause();
         widgets.stop();
         handler.removeCallbacks(startBackdrop);
+        handler.removeCallbacks(restBackdrop);
         if (backdrop != null) backdrop.stop();
         endReorder();   // Home or another app while reordering keeps the order so far
         wallpaperPlayer.stop();
@@ -962,6 +964,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      */
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (event.getAction() == KeyEvent.ACTION_DOWN) wakeBackdrop();
         if (handleSettingsKey(event)) return true;
         if (!reordering) return super.dispatchKeyEvent(event);
         if (widgets.handleEditKey(event, getCurrentFocus())) return true;
@@ -1257,7 +1260,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (clockDivider != null) clockDivider.setBackgroundColor(p.outlineVariant);
         for (Expressive b : buttons) b.palette(p);
         if (dockDecoration != null) {
-            dockDecoration.setColor(p.surfaceContainer);
+            dockDecoration.setPalette(p);
             grid.invalidateItemDecorations();
         }
         if (!festive) {
@@ -1403,6 +1406,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         M3Skin.apply(panel, Palette.currentOrBaseline(), animations, reducedMotion);
     }
 
+    /** Sets the shapes moving, or keeps them moving, until BACKDROP_IDLE_MS without a key. */
+    private void wakeBackdrop() {
+        if (backdrop == null) return;
+        handler.removeCallbacks(restBackdrop);
+        handler.postDelayed(restBackdrop, BACKDROP_IDLE_MS);
+        backdrop.start();
+    }
+
     /**
      * What Launcher settings chose behind the apps. Without a wallpaper the M3E shapes, in the scheme seeded from
      * background_color, are the default; the sky is the time-of-day gradient; plain leaves the scheme's surface.
@@ -1416,6 +1427,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             if (shownPalette != null) backdrop.setPalette(shownPalette);
         } else if (!shapes && backdrop != null) {
             handler.removeCallbacks(startBackdrop);
+            handler.removeCallbacks(restBackdrop);
             backdrop.stop();
             root.removeView(backdrop);
             backdrop = null;

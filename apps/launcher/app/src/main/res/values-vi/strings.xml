@@ -232,4 +232,7 @@
     <string name="screensaver_style_large">Đồng hồ lớn</string>
     <string name="menu_inputs">Nút Menu mở Inputs</string>
     <string name="menu_inputs_desc">Nút ba gạch hiện danh sách HDMI và các nguồn vào, ở mọi app</string>
+    <string name="about_author">Tác giả</string>
+    <string name="about_email">Email</string>
+    <string name="about_source">Mã nguồn</string>
 </resources>

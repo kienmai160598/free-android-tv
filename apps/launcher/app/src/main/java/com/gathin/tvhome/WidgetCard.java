@@ -68,7 +68,8 @@ public final class WidgetCard extends FrameLayout {
     public void setPressed(boolean pressed) {
         boolean was = isPressed();
         super.setPressed(pressed);
-        if (pressed == was || !motion) return;
+        // Only a card that acts on OK gives under it (system stats only show).
+        if (pressed == was || !motion || !hasOnClickListeners()) return;
         float scale = pressed ? PRESSED_SCALE : 1f;
         Motion.FAST_SPATIAL.drive(animate().scaleX(scale).scaleY(scale));
     }

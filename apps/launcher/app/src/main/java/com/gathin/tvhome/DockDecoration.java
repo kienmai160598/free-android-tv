@@ -12,31 +12,36 @@ import androidx.recyclerview.widget.RecyclerView;
 /**
  * Draws the M3 container behind the first (dock) row and adds a gap below it. The container is
  * concentric with the tiles it holds: its radius is the tiles' resting radius plus its padding.
+ * It is see-through, so the backdrop shows in it, with a hairline edge that keeps its shape on a dark scheme.
  */
 public class DockDecoration extends RecyclerView.ItemDecoration {
 
     /** Space between the tiles and the container's edge, on every side. */
     static final float PADDING_DP = 12f;
+    private static final int BAND_ALPHA = 0xB3, EDGE_ALPHA = 0x80;
 
     private int dockSize;
     private boolean rtl;
     private final float density;
     private final Paint band = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint edge = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF rect = new RectF();
 
     DockDecoration(int dockSize, float density) {
         this.dockSize = dockSize;
         this.density = density;
-        band.setColor(Palette.currentOrBaseline().surfaceContainer);   // until Home applies its scheme
+        edge.setStyle(Paint.Style.STROKE);
+        edge.setStrokeWidth(Math.max(1f, density / 2f));   // half a dp: one pixel on a 1080p TV
+        setPalette(Palette.currentOrBaseline());   // until Home applies its scheme
     }
 
     void setDockSize(int size) {
         dockSize = size;
     }
 
-    /** The scheme's surfaceContainer. */
-    void setColor(int argb) {
-        band.setColor(argb);
+    void setPalette(Palette p) {
+        band.setColor(Palette.alpha(p.surfaceContainerHigh, BAND_ALPHA));
+        edge.setColor(Palette.alpha(p.outlineVariant, EDGE_ALPHA));
     }
 
     @Override
@@ -102,5 +107,8 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
         // Concentric corners: outer radius = inner radius + padding.
         float radius = AppAdapter.cornerRadius(cardWidth, density, Shapes.TILE_REST) + pad;
         c.drawRoundRect(rect, radius, radius, band);
+        float half = edge.getStrokeWidth() / 2f;
+        rect.inset(half, half);
+        c.drawRoundRect(rect, radius - half, radius - half, edge);
     }
 }

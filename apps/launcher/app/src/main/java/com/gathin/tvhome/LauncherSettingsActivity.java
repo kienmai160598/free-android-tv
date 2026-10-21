@@ -8,13 +8,13 @@ import android.view.Window;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.StateListDrawable;
 import android.media.tv.TvInputInfo;
 import android.media.tv.TvInputManager;
 import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.ColorStateList;
@@ -141,6 +141,7 @@ public final class LauncherSettingsActivity extends Activity {
         showMenuInputs(config, density);
         showLook(config);
         showScreensaver(config);
+        showHomeStatus();
         showAbout();
         refresh();
         View sheet = findViewById(R.id.sheet);
@@ -202,19 +203,9 @@ public final class LauncherSettingsActivity extends Activity {
         return d;
     }
 
-    /** About: this launcher's version, whether Home opens it, and whether Google TV's own home is off. */
-    private void showAbout() {
+    /** System: whether Home opens this launcher, and Google TV's own home where the TV has one; both open settings. */
+    private void showHomeStatus() {
         PackageManager pm = getPackageManager();
-        TextView version = findViewById(R.id.versionInfo);
-        String name = "";
-        try {
-            PackageInfo info = pm.getPackageInfo(getPackageName(), 0);
-            name = info.versionName;
-        } catch (PackageManager.NameNotFoundException ignored) {
-        }
-        version.setText(item(getString(R.string.about_version), name));
-        version.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(R.drawable.ic_info), null, null, null);
-
         TextView home = findViewById(R.id.defaultInfo);
         ResolveInfo r = pm.resolveActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),
                 PackageManager.MATCH_DEFAULT_ONLY);
@@ -225,21 +216,69 @@ public final class LauncherSettingsActivity extends Activity {
         home.setOnClickListener(v -> open(new Intent(Settings.ACTION_HOME_SETTINGS)));
 
         TextView stock = findViewById(R.id.stockInfo);
-        int state;
+        int setting;
         try {
-            int setting = pm.getApplicationEnabledSetting(STOCK_LAUNCHER);
-            boolean off = setting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-                    || setting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
-                    || setting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED;
-            state = off ? R.string.about_stock_off : R.string.about_stock_on;
+            setting = pm.getApplicationEnabledSetting(STOCK_LAUNCHER);
         } catch (IllegalArgumentException e) {
-            state = R.string.about_stock_none;
+            stock.setVisibility(View.GONE);   // not on this TV: nothing to open
+            return;
         }
-        stock.setText(item(getString(R.string.about_stock), getString(state)));
+        boolean off = setting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                || setting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
+                || setting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED;
+        stock.setText(item(getString(R.string.about_stock),
+                getString(off ? R.string.about_stock_off : R.string.about_stock_on)));
         stock.setCompoundDrawablesRelativeWithIntrinsicBounds(icon(R.drawable.ic_tv), null, null, null);
         // Its App info page: where it can be turned back on (tvctl's undo does the same from a computer).
         stock.setOnClickListener(v -> open(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                 Uri.fromParts("package", STOCK_LAUNCHER, null))));
+    }
+
+    /**
+     * About, view only: an outlined card, M3's container for static content, of entries (a label over its value)
+     * with no icons or arrows. It takes focus so the remote reaches it, but OK does nothing: focus only turns its
+     * outline into the primary focus ring, where the rows that act fill in.
+     */
+    private void showAbout() {
+        float d = getResources().getDisplayMetrics().density;
+        LinearLayout card = findViewById(R.id.aboutCard);
+        StateListDrawable outline = new StateListDrawable();
+        outline.addState(new int[]{android.R.attr.state_focused}, outline(palette.primary, 2 * d, d));
+        outline.addState(new int[0], outline(palette.outlineVariant, d, d));
+        card.setBackground(outline);
+        card.setFocusable(true);
+
+        aboutItem(card, R.string.about_version, versionName(), d);
+        aboutItem(card, R.string.about_author, getString(R.string.about_author_name), d);
+        aboutItem(card, R.string.about_email, getString(R.string.about_email_value), d);
+        aboutItem(card, R.string.about_source, getString(R.string.about_source_value), d);
+    }
+
+    private static GradientDrawable outline(int color, float width, float d) {
+        GradientDrawable outline = new GradientDrawable();
+        outline.setCornerRadius(Shapes.LARGE_INCREASED * d);
+        outline.setStroke(Math.max(1, Math.round(width)), color);
+        return outline;
+    }
+
+    private String versionName() {
+        try {
+            return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+        } catch (PackageManager.NameNotFoundException e) {
+            return "";
+        }
+    }
+
+    /** One About entry as the sheet's rows write it, a label over one line of value, but with no row around it. */
+    private void aboutItem(LinearLayout card, int label, String value, float d) {
+        TextView t = new TextView(this);
+        t.setText(item(getString(label), value));
+        t.setTextSize(15f);
+        t.setLineSpacing(2 * getResources().getDisplayMetrics().scaledDensity, 1f);
+        t.setTypeface(getResources().getFont(R.font.sans_medium));
+        t.setTextColor(0xFFFFFFFF);   // M3Skin: onSurface
+        t.setPadding((int) (18 * d), (int) (8 * d), (int) (16 * d), (int) (8 * d));
+        card.addView(t);
     }
 
     private String name() {

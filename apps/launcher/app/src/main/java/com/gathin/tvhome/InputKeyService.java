@@ -16,7 +16,8 @@ import java.util.Map;
  * YouTube button that only the stock launcher answered), and running_apps_keycodes open the running apps panel.
  * The Menu button can open the inputs too, chosen in Launcher settings ({@link #MENU_OPENS_INPUTS}): Xiaomi's
  * China remotes have no Input button, only a three-line Menu one. Where the TV has no system input switcher
- * (Xiaomi), the button opens Home's own Inputs menu. Every other key passes through untouched.
+ * (Xiaomi), the button opens Home's own Inputs menu; while an input is on screen it stays Xiaomi's player
+ * menu, since leaving the player makes the TV the HDMI-CEC active source and drops the box being watched. Every other key passes through untouched.
  * Opt-in: INPUT_KEY_SERVICE=1 build-and-install.sh (or -InputKeyService on Windows) enables it.
  */
 public class InputKeyService extends AccessibilityService {
@@ -28,6 +29,9 @@ public class InputKeyService extends AccessibilityService {
     private int[] inputKeycodes = new int[0];
     private Map<Integer, String> appKeys = Collections.emptyMap();
     private int[] runningAppsKeycodes = new int[0];
+    /** The app in front, from window changes; system overlays (the volume bar) leave it as it was. */
+    private CharSequence frontPackage = "";
+    private static final String[] OVERLAYS = {"com.android.systemui", "com.xiaomi.mitv.systemui"};
 
     @Override
     protected void onServiceConnected() {
@@ -46,8 +50,8 @@ public class InputKeyService extends AccessibilityService {
 
     private boolean isInputKey(int keyCode) {
         if (keyCode == KeyEvent.KEYCODE_TV || keyCode == KeyEvent.KEYCODE_TV_INPUT) return true;
-        if (keyCode == KeyEvent.KEYCODE_MENU && getSharedPreferences(Config.SETTINGS_NAME, MODE_PRIVATE)
-                .getBoolean(MENU_OPENS_INPUTS, false)) {
+        if (keyCode == KeyEvent.KEYCODE_MENU && !XiaomiInputs.isPlayer(frontPackage)
+                && getSharedPreferences(Config.SETTINGS_NAME, MODE_PRIVATE).getBoolean(MENU_OPENS_INPUTS, false)) {
             return true;
         }
         for (int code : inputKeycodes) if (keyCode == code) return true;
@@ -88,6 +92,10 @@ public class InputKeyService extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
+        CharSequence app = event.getPackageName();
+        if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED || app == null) return;
+        for (String overlay : OVERLAYS) if (overlay.contentEquals(app)) return;
+        frontPackage = app;
     }
 
     @Override

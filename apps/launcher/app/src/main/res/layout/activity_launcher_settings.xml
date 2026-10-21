@@ -98,15 +98,21 @@
                 <TextView style="@style/SettingsSheetLabel" android:text="@string/settings_group_system" />
                 <LinearLayout style="@style/SettingsSheetGroup">
                     <TextView android:id="@+id/tvSettingsChoice" style="@style/SettingsListItem" />
+                    <TextView android:id="@+id/defaultInfo" style="@style/SettingsListItem" />
+                    <TextView android:id="@+id/stockInfo" style="@style/SettingsListItem" />
                     <TextView android:id="@+id/rebootChoice" style="@style/SettingsListItem" />
                 </LinearLayout>
 
                 <TextView style="@style/SettingsSheetLabel" android:text="@string/settings_group_about" />
-                <LinearLayout style="@style/SettingsSheetGroup">
-                    <TextView android:id="@+id/versionInfo" style="@style/SettingsListItem" />
-                    <TextView android:id="@+id/defaultInfo" style="@style/SettingsListItem" />
-                    <TextView android:id="@+id/stockInfo" style="@style/SettingsListItem" />
-                </LinearLayout>
+                <!-- View only: an outlined card of entries, a label over one line of value, filled in by
+                     LauncherSettingsActivity. It takes focus for the remote to reach it; OK does nothing. -->
+                <LinearLayout
+                    android:id="@+id/aboutCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp" />
             </LinearLayout>
         </ScrollView>
     </LinearLayout>

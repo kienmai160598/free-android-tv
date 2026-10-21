@@ -255,4 +255,10 @@
     <string name="screensaver_style_large">Large clock</string>
     <string name="menu_inputs">Menu button opens Inputs</string>
     <string name="menu_inputs_desc">The three-line button lists HDMI and the other inputs, in any app</string>
+    <string name="about_author">Author</string>
+    <string name="about_email">Email</string>
+    <string name="about_source">Source</string>
+    <string name="about_author_name" translatable="false">Kien Mai Trung</string>
+    <string name="about_email_value" translatable="false">kien.mai.trung.98@gmail.com</string>
+    <string name="about_source_value" translatable="false">github.com/kienmai160598/free-android-tv</string>
 </resources>
