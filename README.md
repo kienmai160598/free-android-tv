@@ -12,7 +12,18 @@ No root · nothing uninstalled · everything undoable
 ![Android](https://img.shields.io/badge/Android_TV-8.0%2B-3ddc84?logo=android&logoColor=white)
 ![Licence](https://img.shields.io/badge/licence-MIT-ff6d00)
 
+<img src="docs/media/home.gif" alt="km-launcher on a TCL Google TV: the dock, widgets and the header" width="880">
+
 </div>
+
+## 📸 Screens
+
+| | |
+|---|---|
+| ![Home](docs/media/home.png) | ![Rows scrolling under the header](docs/media/scrolled.png) |
+| 🏠 Home: widgets over the dock | ⬇️ Rows fade out under the header |
+| ![Launcher settings](docs/media/settings.png) | ![Clock screensaver](docs/media/dream.png) |
+| ⚙️ Settings on the TV | 🕐 Clock screensaver |
 
 ## ✨ What you get
 

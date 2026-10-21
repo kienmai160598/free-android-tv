@@ -23,6 +23,13 @@
 #   they do nothing once it is off. An accessibility service that matches those scancodes and starts the app
 #   fixes both (verified with the real remote).
 # scripts/tvctl push worked here (md5 match). Screenshots of Live TV and HDMI are 0 bytes; Netflix's are black.
+# km-launcher maps these by default: Netflix 4062, YouTube 4065, gear 4077 (KEYCODE_TCL_*; install with
+# --input-key-service --home-key-service). Checked with the real remote on a second unit, 2026-10-21.
+# tvctl theme fails here: shell is not in ext_data_rw, so /sdcard/Android/data/com.gathin.tvhome is closed to
+# adb. Change the dock with Edit Home instead. Apps may read neither /proc/stat, cpuidle nor /proc/uptime, so the
+# CPU line reads /proc/stat through adb once the owner turns it on (widget menu, CPU, Shown) and allows the key.
+# The screensaver still named the disabled dreamx: settings put secure screensaver_components
+# com.gathin.tvhome/.ClockDream (and screensaver_default_component).
 #
 # DO NOT DISABLE: com.tcl.tv (Live TV, HDMI playback), com.tcl.tvinput (tuner, HDMI and AV inputs),
 # com.tcl.suspension (Quick Panel, also the Input key's source panel), com.tcl.keyhelp (remote virtual keys),
@@ -31,12 +38,12 @@
 # com.tvos (framework resources).
 # Unclear, left enabled: com.tcl.micmanager, com.google.android.apps.nbu.smartconnect.tv.
 # Kept by choice: Netflix, YouTube, Chromecast (com.google.android.apps.mediashell).
-# Already disabled at the factory: au.com.stan.and, com.google.android.videos, com.tcl.notereminder,
-# com.tcl.smartalexa, tv.wuaki.apptv.
+# Already disabled at the factory: au.com.stan.and, com.tcl.smartalexa, tv.wuaki.apptv (a second unit also had
+# com.google.android.videos and com.tcl.notereminder off; the first did not, so both are listed below).
 
 # 1. Telemetry and analytics
 com.tcl.ttvs                               # TCL BI/analytics, also TCL's firmware updater (comment this line out to keep updates)
-com.tcl.guard                              # TGuard device-use tracking, cleaner
+com.tcl.guard                              # TGuard tracking, cleaner; persistent: still starts at boot
 com.tcl.useragreement                      # privacy-agreement proxy for ttvs business data
 com.google.android.feedback
 com.google.android.partnersetup
@@ -71,6 +78,8 @@ com.google.android.play.games
 com.tcl.ui_mediaCenter                     # USB media player
 com.tcl.gallery
 com.iqiyi.i18n.tv                          # partner auto-install
+com.google.android.videos                  # Play Movies & TV, retired by Google
+com.tcl.notereminder                       # TCL Reminder
 
 # 5. Launcher handover (setupwraith's RecoveryActivity claims HOME once launcherx is off; the install
 #    script disables launcherx itself). Ambient mode replaced by the launcher's Clock screensaver.
