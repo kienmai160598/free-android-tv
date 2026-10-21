@@ -31,7 +31,7 @@
     <string name="animations_state">Hiệu ứng: %1$s</string>
     <string name="advanced_effects">Chuyển động sinh động</string>
     <string name="advanced_effects_state">Hiệu ứng nâng cao: %1$s</string>
-    <string name="advanced_effects_warning">Focus nảy và phóng to hơn. Tắt nếu màn hình chính bị giật.</string>
+    <string name="advanced_effects_warning">Focus nảy, phóng to hơn và hình nền biến hình. Tắt nếu màn hình chính bị giật.</string>
     <string name="follow_theme">Theo theme (xóa lựa chọn trên TV)</string>
     <string name="follow_theme_hint">Dùng bố cục và hiệu ứng của theme hiện tại hoặc mặc định. Đẩy hoặc đặt lại theme cũng xóa các lựa chọn bạn đã chọn trên TV.</string>
     <string name="tv_settings">Cài đặt hệ thống TV</string>
@@ -197,6 +197,16 @@
     <string name="reboot">Tùy chọn khởi động</string>
     <string name="reboot_desc">Cần bật gỡ lỗi qua mạng</string>
     <string name="reboot_action">Khởi động lại</string>
+    <string name="update_title">Cập nhật launcher</string>
+    <string name="update_checking">%1$s, đang kiểm tra bản mới…</string>
+    <string name="update_current">%1$s là bản mới nhất</string>
+    <string name="update_available">Có bản %1$s (%2$d KB). Bấm OK để cài</string>
+    <string name="update_downloading">Đang tải %1$d%%</string>
+    <string name="update_installing">Đang cài. Bấm OK nếu không thấy gì</string>
+    <string name="update_check_failed">Không kiểm tra được. Bấm OK để thử lại</string>
+    <string name="update_download_failed">Tải không được. Bấm OK để thử lại</string>
+    <string name="update_needs_permission">Chưa được phép cài. Chạy tvctl install một lần</string>
+    <string name="update_install_failed">Cập nhật lỗi: %1$s</string>
     <string name="power_off_action">Tắt</string>
     <string name="boot_options_message">Chọn TV sẽ làm gì tiếp theo</string>
     <string name="restart_desc">Tắt rồi bật lại TV</string>

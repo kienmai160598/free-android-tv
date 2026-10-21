@@ -34,7 +34,7 @@
     <string name="animations_state">Animations: %1$s</string>
     <string name="advanced_effects">Expressive motion</string>
     <string name="advanced_effects_state">Advanced effects: %1$s</string>
-    <string name="advanced_effects_warning">Springier focus and a bigger zoom. Turn off if Home stutters.</string>
+    <string name="advanced_effects_warning">Springier focus, a bigger zoom and morphing backdrop shapes. Turn off if Home stutters.</string>
     <string name="follow_theme">Follow theme (reset on-TV choices)</string>
     <string name="follow_theme_hint">Uses the current theme or built-in layout and motion settings. Pushing or resetting a theme also clears your on-TV choices.</string>
     <string name="tv_settings">TV system settings</string>
@@ -219,6 +219,16 @@
     <string name="reboot">Boot options</string>
     <string name="reboot_desc">Needs network debugging on</string>
     <string name="reboot_action">Restart</string>
+    <string name="update_title">Launcher update</string>
+    <string name="update_checking">%1$s, checking for updates…</string>
+    <string name="update_current">%1$s is up to date</string>
+    <string name="update_available">Version %1$s is out (%2$d KB). Press OK to install</string>
+    <string name="update_downloading">Downloading %1$d%%</string>
+    <string name="update_installing">Installing. Press OK if nothing appears</string>
+    <string name="update_check_failed">Couldn\'t check. Press OK to try again</string>
+    <string name="update_download_failed">Download failed. Press OK to try again</string>
+    <string name="update_needs_permission">Installs are blocked. Run tvctl install once</string>
+    <string name="update_install_failed">Update failed: %1$s</string>
     <string name="power_off_action">Turn off</string>
     <string name="boot_options_message">Choose what the TV does next</string>
     <string name="restart_desc">Turns the TV off and on again</string>

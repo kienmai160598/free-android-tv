@@ -9,6 +9,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.FrameLayout;
 
@@ -26,8 +27,8 @@ import java.util.List;
  * With animations on, they move: each shape turns slowly, breathes a little in scale, wanders around the
  * screen on a slow Lissajous path (two sine waves whose periods never line up, so the route does not
  * visibly repeat), and follows the grid's scrolling at its own depth (parallax, {@link #onGridScrolled}). Every shape is
- * its own view on a hardware layer drawn once, so the motion is a GPU transform of a cached texture,
- * never a redraw of the path; it runs only while Home is visible ({@link #start}, {@link #stop}).
+ * its own view on a hardware layer, so the motion is a GPU transform of a cached texture; it runs only
+ * while Home is visible ({@link #start}, {@link #stop}).
  */
 final class ExpressiveBackdrop extends FrameLayout {
 
@@ -54,12 +55,26 @@ final class ExpressiveBackdrop extends FrameLayout {
     private long wanderMs;
     private TimeAnimator wander;
 
-    ExpressiveBackdrop(Context context, boolean animations, boolean reducedMotion) {
+    private static final Form[] COOKIE_FORMS = {
+            new Form(9, 0.06f, 12f), new Form(12, 0.05f, 0f),
+            new Form(8, 0.09f, 22.5f), new Form(7, 0.07f, 0f)};
+    private static final Form[] CLOVER_FORMS = {
+            new Form(4, 0.20f, 45f), new Form(8, 0.13f, 22.5f),
+            new Form(6, 0.10f, 0f), new Form(5, 0.16f, 18f)};
+    private static final long MORPH_HOLD_MS = 4_000;
+    private static final Motion.Spec MORPH_SPRING = Motion.SLOW_SPATIAL;
+    private final boolean morph;
+    private final Interpolator morphCurve = MORPH_SPRING.interpolator();
+    private final long morphMs = MORPH_SPRING.durationMs();
+
+    ExpressiveBackdrop(Context context, boolean animations, boolean reducedMotion,
+            boolean advancedEffects) {
         super(context);
         animate = animations && !reducedMotion;
+        morph = animate && advancedEffects;
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
-        cookie = new ShapeView(context, 9, 0.06f, 12f);
-        clover = new ShapeView(context, 4, 0.20f, 45f);
+        cookie = new ShapeView(context, COOKIE_FORMS);
+        clover = new ShapeView(context, CLOVER_FORMS);
         addView(cookie);
         addView(clover);
         cookieParallax = Motion.DEFAULT_SPATIAL.reduced(reducedMotion)
@@ -131,9 +146,25 @@ final class ExpressiveBackdrop extends FrameLayout {
             float s = wanderMs / 1000f, w = getWidth(), h = getHeight();
             cookie.setWander(wave(s, COOKIE_PERIOD_X_S, 0f) * COOKIE_REACH_X * w, wave(s, COOKIE_PERIOD_Y_S, 0.3f) * COOKIE_REACH_Y * h);
             clover.setWander(wave(s, CLOVER_PERIOD_X_S, 0.6f) * CLOVER_REACH_X * w, wave(s, CLOVER_PERIOD_Y_S, 0.1f) * CLOVER_REACH_Y * h);
+            if (morph) morphBoth(wanderMs);
         });
         wander.start();
         motion.add(wander);
+    }
+
+    private void morphBoth(long ms) {
+        long cycleMs = MORPH_HOLD_MS + morphMs;
+        morphAt(cookie, ms, cycleMs);
+        morphAt(clover, ms + cycleMs / 2, cycleMs);
+    }
+
+    private void morphAt(ShapeView shape, long ms, long cycleMs) {
+        long step = ms / cycleMs;
+        long intoMorph = ms % cycleMs - MORPH_HOLD_MS;
+        float progress = intoMorph <= 0
+                ? 0f
+                : morphCurve.getInterpolation(Math.min(1f, intoMorph / (float) morphMs));
+        shape.setMorph(step, progress);
     }
 
     /** A sine wave of this period in seconds, phase in turns, from -1 to 1. */
@@ -175,10 +206,13 @@ final class ExpressiveBackdrop extends FrameLayout {
 
     /** One shape, drawn once into a hardware layer and moved only by transforms. */
     private static final class ShapeView extends View {
+        private static final int MORPH_FRAMES = 48;
         private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Path path = new Path();
-        private final int lobes;
-        private final float depth, rotation;
+        private final Form[] forms;
+        private Form from, to;
+        private float morphProgress;
+        private int drawnFrame;
         /** Two moves add up on the translation: the parallax spring's (y) and the wander (x and y). */
         private float parallaxY, wanderX, wanderY;
 
@@ -206,12 +240,24 @@ final class ExpressiveBackdrop extends FrameLayout {
             setTranslationY(parallaxY + wanderY);
         }
 
-        ShapeView(Context context, int lobes, float depth, float rotation) {
+        ShapeView(Context context, Form[] forms) {
             super(context);
-            this.lobes = lobes;
-            this.depth = depth;
-            this.rotation = rotation;
+            this.forms = forms;
+            from = forms[0];
+            to = forms[0];
             setLayerType(LAYER_TYPE_HARDWARE, null);
+        }
+
+        void setMorph(long step, float progress) {
+            Form stepFrom = forms[(int) (step % forms.length)];
+            Form stepTo = forms[(int) ((step + 1) % forms.length)];
+            int frame = Math.round(progress * MORPH_FRAMES);
+            if (stepFrom == from && stepTo == to && frame == drawnFrame) return;
+            from = stepFrom;
+            to = stepTo;
+            morphProgress = progress;
+            drawnFrame = frame;
+            invalidate();
         }
 
         void setColor(int color) {
@@ -222,9 +268,39 @@ final class ExpressiveBackdrop extends FrameLayout {
         @Override
         protected void onDraw(Canvas c) {
             float r = getWidth() / 2f;
-            shapePath(path, r, r, r, lobes, depth, rotation);
+            morphPath(path, r, r, r, from, to, morphProgress);
             c.drawPath(path, fill);
         }
+    }
+
+    static final class Form {
+        final int lobes;
+        final float depth, rotationDeg;
+
+        Form(int lobes, float depth, float rotationDeg) {
+            this.lobes = lobes;
+            this.depth = depth;
+            this.rotationDeg = rotationDeg;
+        }
+
+        double scaleAt(double angle) {
+            return waveScale(lobes, depth, Math.toRadians(rotationDeg), angle);
+        }
+    }
+
+    static void morphPath(Path path, float cx, float cy, float radius, Form from, Form to,
+            float progress) {
+        path.rewind();
+        for (int i = 0; i <= OUTLINE_STEPS; i++) {
+            double t = Math.PI * 2 * i / OUTLINE_STEPS;
+            double fromScale = from.scaleAt(t);
+            double scale = fromScale + (to.scaleAt(t) - fromScale) * progress;
+            double r = radius * Math.max(0, scale);
+            float x = (float) (cx + r * Math.cos(t)), y = (float) (cy + r * Math.sin(t));
+            if (i == 0) path.moveTo(x, y);
+            else path.lineTo(x, y);
+        }
+        path.close();
     }
 
     /**
@@ -234,15 +310,20 @@ final class ExpressiveBackdrop extends FrameLayout {
      */
     static void shapePath(Path path, float cx, float cy, float radius, int lobes, float depth, float rotationDeg) {
         path.rewind();
-        int steps = 180;
         double rot = Math.toRadians(rotationDeg);
-        for (int i = 0; i <= steps; i++) {
-            double t = Math.PI * 2 * i / steps;
-            double r = radius * (1 - depth + depth * Math.cos(lobes * (t - rot)));
+        for (int i = 0; i <= OUTLINE_STEPS; i++) {
+            double t = Math.PI * 2 * i / OUTLINE_STEPS;
+            double r = radius * waveScale(lobes, depth, rot, t);
             float x = (float) (cx + r * Math.cos(t)), y = (float) (cy + r * Math.sin(t));
             if (i == 0) path.moveTo(x, y);
             else path.lineTo(x, y);
         }
         path.close();
+    }
+
+    private static final int OUTLINE_STEPS = 180;
+
+    private static double waveScale(int lobes, float depth, double rotation, double angle) {
+        return 1 - depth + depth * Math.cos(lobes * (angle - rotation));
     }
 }

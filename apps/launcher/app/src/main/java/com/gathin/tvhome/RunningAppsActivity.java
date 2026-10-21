@@ -59,6 +59,8 @@ public final class RunningAppsActivity extends Activity {
         summary = findViewById(R.id.summary);
         hint = findViewById(R.id.hint);
         sideSheet = new SideSheet(this, scrim, panel, config);
+        FocusScrollView rowsScroll = findViewById(R.id.rowsScroll);
+        rowsScroll.setMotion(config.animations, config.reducedMotion);
         scrim.setOnClickListener(v -> sideSheet.close());
         reskin();
         sideSheet.slideIn();

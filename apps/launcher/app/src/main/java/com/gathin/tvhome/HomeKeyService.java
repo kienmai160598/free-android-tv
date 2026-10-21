@@ -1,13 +1,19 @@
 package com.gathin.tvhome;
 
 import android.accessibilityservice.AccessibilityService;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
 import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityEvent;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -18,7 +24,10 @@ import java.util.Map;
  * On firmware that lets only its own launcher be Home (Xiaomi's China TVs ignore set-home-activity, and
  * with the stock launcher disabled Home falls to Settings' FallbackHome), the stock one stays enabled
  * and this service stands in for it: KEYCODE_HOME opens this launcher, and so does the stock launcher
- * coming to the front (after boot, or Back out of an app).
+ * coming to the front (after boot, or Back out of an app). With the stock launcher disabled anyway,
+ * Settings' FallbackHome is the one that comes to the front. Home windows are matched by their activity
+ * class, and only when no other window follows within SETTLE_MS, so Settings, which shares FallbackHome's
+ * task, still opens.
  *
  * Enable over adb:
  *   settings put secure enabled_accessibility_services com.gathin.tvhome/.HomeKeyService
@@ -32,6 +41,14 @@ public class HomeKeyService extends AccessibilityService {
     private boolean settingsPanel;
     /** app_keys, the same map InputKeyService reads, for setups that run only this service. */
     private Map<Integer, String> appKeys = Collections.emptyMap();
+    private static final long JUST_BOOTED_MS = 3 * 60_000;
+    private static final String STANDS_IN_FOR_HOME = "stands_in_for_home";
+    private static final long SETTLE_MS = 300;
+    private final Handler settle = new Handler(Looper.getMainLooper());
+    private final Runnable replaceOtherHome = () -> {
+        rememberStandingIn();
+        openHome();
+    };
 
     @Override
     protected void onServiceConnected() {
@@ -42,6 +59,7 @@ public class HomeKeyService extends AccessibilityService {
         settingsKeycodes = config.settingsKeycodes;
         settingsPanel = config.settingsKeyPanel;
         appKeys = RemoteKeys.parseAppKeys(config.appKeys);
+        if (SystemClock.elapsedRealtime() < JUST_BOOTED_MS) openHome();
     }
 
     private boolean isSettingsKey(KeyEvent event) {
@@ -67,20 +85,64 @@ public class HomeKeyService extends AccessibilityService {
             if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) RemoteKeys.launch(this, app);
             return true;
         }
+        boolean standsInForHome = standsInForHome() || stockHome() != null;
         boolean home = event.getKeyCode() == KeyEvent.KEYCODE_ALL_APPS
-                || (event.getKeyCode() == KeyEvent.KEYCODE_HOME && stockHome() != null);
+                || (event.getKeyCode() == KeyEvent.KEYCODE_HOME && standsInForHome);
         if (!home) return false;
         if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) openHome();
         return true;
     }
 
-    /** The package Home resolves to when it is not this launcher, else null. */
-    private String stockHome() {
+    /** The activity Home resolves to when it is not this launcher, else null. */
+    private ActivityInfo stockHome() {
         Intent home = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME);
         ResolveInfo owner = getPackageManager().resolveActivity(home, PackageManager.MATCH_DEFAULT_ONLY);
         if (owner == null || owner.activityInfo == null) return null;
-        String pkg = owner.activityInfo.packageName;
-        return getPackageName().equals(pkg) ? null : pkg;
+        return getPackageName().equals(owner.activityInfo.packageName) ? null : owner.activityInfo;
+    }
+
+    private boolean isOtherHomeWindow(AccessibilityEvent event) {
+        Intent home = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME);
+        List<ResolveInfo> homes = getPackageManager()
+                .queryIntentActivities(home, PackageManager.MATCH_DEFAULT_ONLY);
+        for (ResolveInfo candidate : homes) {
+            ActivityInfo activity = candidate.activityInfo;
+            if (activity == null || getPackageName().equals(activity.packageName)) continue;
+            if (isWindowOf(activity, event)) return true;
+        }
+
+        return false;
+    }
+
+    private boolean isActivityWindow(AccessibilityEvent event) {
+        if (event.getClassName() == null) return false;
+
+        ComponentName window = new ComponentName(event.getPackageName().toString(),
+                event.getClassName().toString());
+        try {
+            getPackageManager().getActivityInfo(window, 0);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+
+    private static boolean isWindowOf(ActivityInfo activity, AccessibilityEvent event) {
+        return activity.packageName.contentEquals(event.getPackageName())
+                && event.getClassName() != null
+                && activity.name.contentEquals(event.getClassName());
+    }
+
+    private boolean standsInForHome() {
+        return getSharedPreferences(Config.SETTINGS_NAME, MODE_PRIVATE)
+                .getBoolean(STANDS_IN_FOR_HOME, false);
+    }
+
+    private void rememberStandingIn() {
+        if (standsInForHome()) return;
+
+        getSharedPreferences(Config.SETTINGS_NAME, MODE_PRIVATE).edit()
+                .putBoolean(STANDS_IN_FOR_HOME, true).apply();
     }
 
     private void openHome() {
@@ -94,11 +156,16 @@ public class HomeKeyService extends AccessibilityService {
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED || event.getPackageName() == null) return;
-        String stock = stockHome();
-        if (stock != null && stock.contentEquals(event.getPackageName())) openHome();
+        if (isOtherHomeWindow(event)) {
+            settle.removeCallbacks(replaceOtherHome);
+            settle.postDelayed(replaceOtherHome, SETTLE_MS);
+        } else if (isActivityWindow(event)) {
+            settle.removeCallbacks(replaceOtherHome);
+        }
     }
 
     @Override
     public void onInterrupt() {
+        settle.removeCallbacks(replaceOtherHome);
     }
 }

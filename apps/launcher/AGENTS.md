@@ -14,12 +14,14 @@ Locales: English and Vietnamese only.
 | `.LauncherSettingsActivity`, `.QuickSettingsActivity`, `.HomeSettingsActivity` | On-TV settings (side sheet), gear-key panel, default-home picker |
 | `.RunningAppsActivity` | Running apps side sheet: switch to or force-stop apps, through `LocalAdb` |
 | `.InputKeyService` | Accessibility: Input button (`KEYCODE_TV`, `KEYCODE_TV_INPUT`, `input_key_keycodes`, Menu if `menu_opens_inputs`), `app_keys`, `running_apps_keycodes`; no system switcher: Home's Inputs menu |
-| `.HomeKeyService` | Accessibility: Home that sends `KEYCODE_ALL_APPS`, `settings_key_*`, `app_keys`; stands in for Home where the firmware keeps it (Xiaomi CN): `KEYCODE_HOME` and the stock launcher coming to the front open this one |
+| `.HomeKeyService` | Accessibility: Home that sends `KEYCODE_ALL_APPS`, `settings_key_*`, `app_keys`; stands in for Home where the firmware keeps it (Xiaomi CN): `KEYCODE_HOME` and any other HOME activity coming to the front (the stock launcher, or Settings' FallbackHome once the stock one is disabled) open this one, 300 ms after it settles |
 | `.ClockDream` | Clock screensaver; style from Launcher settings (shapes, glow, minimal, large) |
+| `.InstallStatusReceiver` | Not exported: the PackageInstaller session's result; shows the system confirm dialog |
 
 ## Code map
 
-- Motion and shape: `Motion` (expressive spring tokens), `Shapes`, `Expressive`, `FocusIndicator`, `GlassView` (springs' model), `LabelReveal`, `MenuHighlight`, `ShelfHighlight`, `SpringItemAnimator` (Edit Home), `SideSheet`.
+- Motion and shape: `Motion` (expressive spring tokens), `Shapes`, `Expressive`, `FocusIndicator`, `GlassView` (springs' model), `LabelReveal`, `MenuHighlight`, `ShelfHighlight`, `SpringItemAnimator` (Edit Home), `SideSheet`, `FocusScrollView` (side sheets: every
+  press moves focus one row, the row is kept centred on a spring).
 - Colour and skin: `Palette` (Tonal Spot from `background_color` or wallpaper), `M3Skin` (styles views by `android:tag`), `M3Switch`, `M3Progress`, `ShapeBadge`, `SettingsBanner`.
 - Home content: `HomeGrid` (full height; the header floats over its top `underlap()`, and rows scrolled under it fade into `headerScrim`), `AppAdapter`, `Order`, `DockSlots`, `DockDecoration`, `GridNavigation`, `LibraryApps`, `AppLibraryDialog`.
 - Widgets: `WidgetShelf`, `WidgetCard`, `Weather` and `AirQuality` (Open-Meteo; the place from ipwho.is or geojs.io), `CpuMeter` (cpuidle in sysfs, since `/proc/stat` is hidden; `/proc/uptime` without cpuidle; else `AdbCpuFeed`, /proc/stat through `LocalAdb` once the owner turns the CPU line on), `LunarCalendar`, `Shamsi`.
@@ -32,6 +34,10 @@ Locales: English and Vietnamese only.
 - Inputs on Xiaomi's China TVs: `XiaomiInputs` (their player's source numbers, from the port labels).
 - Config: `Config` reads `res/values/config.xml`, overlaid by `/sdcard/Android/data/com.gathin.tvhome/files/config.json` (a theme).
 - Module cards: `Cards`, `CardFeature`. Remote keys: `RemoteKeys`. VPN pill badge: `VpnBadge`.
+- Updates: `LauncherRelease` (GitHub `releases/latest` of kienmai160598/freeTV, checked once when
+  Launcher settings opens), `ReleaseInstaller` (streams `km-launcher.apk` into a PackageInstaller
+  session, checks the asset's SHA-256), `InstallStatusReceiver`. Needs the `REQUEST_INSTALL_PACKAGES`
+  appop (`tvctl install` sets it); releases must stay signed with the key local builds use.
 
 ## Config keys (`config.xml`, or a theme's `config.json`)
 

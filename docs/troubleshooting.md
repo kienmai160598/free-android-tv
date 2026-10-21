@@ -42,3 +42,15 @@
 - Wrong time zone on old firmware: `settings put global auto_time_zone 0; cmd alarm set-timezone <Zone>`,
   or a fixed `GMT+hh:mm` when the firmware's tz data predates a rule change.
 - Updated system apps (voice assistant on Xiaomi Android 9) can re-enable themselves at boot.
+
+## Xiaomi China firmware keeps Home
+
+- `set-home-activity` is stored but ignored: Home resolves to `com.mitv.tvhome`, or to Settings'
+  `FallbackHome` once that is disabled. HomeKeyService stands in either way; with the stock launcher
+  disabled (`pm disable-user --user 0 com.mitv.tvhome`, undo with `pm enable`) only a black
+  FallbackHome flashes. It stayed disabled across a reboot on MiTV-ASTP0 (Android 9).
+- `FallbackHome` shares its task with TV Settings, so Settings opening also reports FallbackHome.
+- An injected `input keyevent KEYCODE_HOME` stops app switches for 5 s: the launcher opened by the
+  service shows only after that. The remote's Home goes through the service and has no delay.
+- After `adb install -r` the accessibility services may stay unbound until
+  `enabled_accessibility_services` is written again (`tvctl install` does).
