@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Base64;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
@@ -33,7 +34,7 @@ import javax.crypto.Cipher;
  * A small adb client for this TV's own adbd on 127.0.0.1:5555, for what Android 14 keeps from a normal
  * app: seeing other apps' processes and force-stopping them. The launcher signs in with its own RSA key
  * (files/adbkey), so the first time the TV asks on screen to allow it, as it does for a computer. One
- * shell command per connection, blocking: call it off the main thread. Needs adb over the network on
+ * shell command per connection ({@link Session}), blocking: call it off the main thread. Needs adb over the network on
  * port 5555 (adb tcpip 5555, which lasts until the TV restarts).
  */
 final class LocalAdb {
@@ -45,7 +46,7 @@ final class LocalAdb {
         }
     }
 
-    /** The TV showed its allow prompt and nobody accepted it in time. */
+    /** The TV showed its allow prompt and nobody accepted it in time, or it does not know the key and may not ask. */
     static final class NotAllowedException extends IOException {
         NotAllowedException() {
             super("the TV did not allow this key");
@@ -73,21 +74,38 @@ final class LocalAdb {
 
     /** Runs a shell command and returns what it printed (stdout and stderr together). */
     String shell(String command) throws IOException {
-        Socket socket = new Socket();
-        try {
-            socket.connect(new InetSocketAddress("127.0.0.1", PORT), CONNECT_MS);
-        } catch (IOException e) {
-            socket.close();
-            throw new OffException(e);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try (Session session = new Session()) {
+            session.run(command, true, output::write);
         }
-        try (Socket s = socket) {
-            s.setTcpNoDelay(true);
-            s.setSoTimeout(REPLY_MS);
-            DataInputStream in = new DataInputStream(s.getInputStream());
-            OutputStream out = s.getOutputStream();
-            signIn(s, in, out);
+        return output.toString("UTF-8");
+    }
+
+    /** What a command prints, chunk by chunk as adbd sends it. */
+    interface Output {
+        void write(byte[] chunk) throws IOException;
+    }
+
+    /** One connection running one command; close() ends it from any thread, also while it waits for output. */
+    final class Session implements Closeable {
+        private final Socket socket = new Socket();
+
+        /**
+         * Runs command until it ends or the session closes. With mayPrompt false, a key the TV does not know
+         * yet fails with NotAllowedException instead of putting the allow prompt on screen.
+         */
+        void run(String command, boolean mayPrompt, Output output) throws IOException {
+            try {
+                socket.connect(new InetSocketAddress("127.0.0.1", PORT), CONNECT_MS);
+            } catch (IOException e) {
+                throw new OffException(e);
+            }
+            socket.setTcpNoDelay(true);
+            socket.setSoTimeout(REPLY_MS);
+            DataInputStream in = new DataInputStream(socket.getInputStream());
+            OutputStream out = socket.getOutputStream();
+            signIn(socket, in, out, mayPrompt);
             send(out, OPEN, 1, 0, ("shell:" + command + "\0").getBytes(StandardCharsets.UTF_8));
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
             int remote = 0;
             while (true) {
                 Message m = read(in);
@@ -98,13 +116,22 @@ final class LocalAdb {
                     send(out, OKAY, 1, m.arg0, new byte[0]);
                 } else if (m.command == CLSE) {
                     if (remote != 0) send(out, CLSE, 1, remote, new byte[0]);
-                    return output.toString("UTF-8");
+                    return;
                 }
+            }
+        }
+
+        @Override
+        public void close() {
+            try {
+                socket.close();
+            } catch (IOException ignored) {
+                // Closing is all that was asked.
             }
         }
     }
 
-    private void signIn(Socket s, DataInputStream in, OutputStream out) throws IOException {
+    private void signIn(Socket s, DataInputStream in, OutputStream out, boolean mayPrompt) throws IOException {
         KeyPair key = key();
         send(out, CNXN, VERSION, MAX_DATA, "host::\0".getBytes(StandardCharsets.US_ASCII));
         boolean signed = false;
@@ -116,6 +143,7 @@ final class LocalAdb {
                 send(out, AUTH, AUTH_SIGNATURE, 0, sign(key.getPrivate(), m.data));
                 signed = true;
             } else {
+                if (!mayPrompt) throw new NotAllowedException();
                 // The TV does not know this key yet: offer it, which puts the allow prompt on screen.
                 send(out, AUTH, AUTH_RSAPUBLICKEY, 0, publicKey((RSAPublicKey) key.getPublic()));
                 s.setSoTimeout(PROMPT_MS);

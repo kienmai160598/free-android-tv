@@ -129,7 +129,7 @@ final class WidgetShelf {
     private final TextView ramName, storageName, cpuName, cpuValue;
     private final M3Progress cpuBar;
     private final ImageView cpuIcon;
-    private final CpuMeter cpu = new CpuMeter();
+    private final CpuMeter cpu;
     /** How often the CPU meter reads while Home shows: often enough to see a load come and go. */
     private static final long CPU_MS = 3000;
     private final Runnable cpuTick = new Runnable() {
@@ -142,6 +142,8 @@ final class WidgetShelf {
         }
     };
     private int lastCpu = CpuMeter.NOT_YET;
+    /** How far the header reaches over the grid's frame, from the last align. */
+    private int headerUnderlap;
     private final Handler main = new Handler(Looper.getMainLooper());
     private final float density;
     /** The weather_city in config.xml: the place until the owner picks one on the widget. */
@@ -192,6 +194,7 @@ final class WidgetShelf {
         density = activity.getResources().getDisplayMetrics().density;
         configCity = activity.getString(R.string.weather_city).trim();
         prefs = activity.getSharedPreferences(Config.SETTINGS_NAME, Context.MODE_PRIVATE);
+        cpu = new CpuMeter(activity);
         cards = new WidgetCard[]{shelf.findViewById(R.id.widgetWeather), shelf.findViewById(R.id.widgetSystem),
                 shelf.findViewById(R.id.widgetAir), shelf.findViewById(R.id.widgetCalendar)};
         weatherPlace = shelf.findViewById(R.id.weatherPlace);
@@ -584,6 +587,11 @@ final class WidgetShelf {
                 items.add(setting(R.drawable.ic_memory, R.string.setting_cpu, shown[showCpu() ? 0 : 1],
                         () -> showChoices(anchor, shown, showCpu() ? 0 : 1, i -> {
                             prefs.edit().putBoolean(CPU_KEY, i == 0).apply();
+                            if (i == 0 && lastCpu == CpuMeter.UNAVAILABLE) {
+                                // The TV hides the figures from apps: ask it to allow reading them through adb.
+                                cpu.askToAllow();
+                                lastCpu = CpuMeter.NOT_YET;
+                            }
                             paintSystem();
                         })));
                 break;
@@ -717,8 +725,9 @@ final class WidgetShelf {
         systemPage = prefs.getInt(SYSTEM_PAGE_KEY, 0) % SystemPages.COUNT;
         if (has(CALENDAR)) paintCalendar();
         if (has(SYSTEM)) {
+            // The baseline: the first figure comes with the first tick, unless the TV hides every source.
+            if (cpu.sample() == CpuMeter.UNAVAILABLE) lastCpu = CpuMeter.UNAVAILABLE;
             paintSystem();
-            cpu.sample();   // the baseline: the first figure comes with the first tick
             main.postDelayed(cpuTick, CPU_MS);
         }
         if (has(WEATHER)) refreshWeather(false);
@@ -729,6 +738,7 @@ final class WidgetShelf {
         if (!started) return;
         started = false;
         main.removeCallbacks(cpuTick);
+        cpu.stop();
     }
 
     /** Once a minute while Home shows. */
@@ -780,8 +790,10 @@ final class WidgetShelf {
         if (moved) shelf.post(() -> {
             for (WidgetCard card : slots) highlight.follow(card);
         });
+        // Halfway between the header, which floats over the top of the grid, and the dock.
+        headerUnderlap = grid instanceof HomeGrid ? ((HomeGrid) grid).underlap() : 0;
         ViewGroup.MarginLayoutParams slp = (ViewGroup.MarginLayoutParams) shelf.getLayoutParams();
-        int top = Math.max(0, (dockTop - slp.height) / 2);
+        int top = headerUnderlap + Math.max(0, (dockTop - headerUnderlap - slp.height) / 2);
         if (slp.topMargin != top) {
             slp.topMargin = top;
             shelf.setLayoutParams(slp);
@@ -794,9 +806,10 @@ final class WidgetShelf {
         int offset = grid.computeVerticalScrollOffset();
         shelf.setTranslationY(-offset);
 
+        // Whole until it reaches the header, then fading out as it slides under the header's scrim.
         ViewGroup.MarginLayoutParams layout = (ViewGroup.MarginLayoutParams) shelf.getLayoutParams();
-        float distanceToHeader = Math.max(1f, layout.topMargin);
-        float visibility = Math.max(0f, Math.min(1f, 1f - offset / distanceToHeader));
+        float underHeader = offset - (layout.topMargin - headerUnderlap);
+        float visibility = Math.max(0f, Math.min(1f, 1f - underHeader / Math.max(1f, shelf.getHeight())));
         shelf.setAlpha(visibility);
         shelf.setVisibility(visibility == 0f ? View.INVISIBLE : View.VISIBLE);
     }

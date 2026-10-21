@@ -19,10 +19,13 @@
          set "fill_dock": false. -->
     <bool name="fill_dock">true</bool>
 
-    <!-- Apps never shown as tiles (e.g. the Live TV app, which the Inputs menu already covers). -->
+    <!-- Apps never shown as tiles (e.g. the Live TV app, which the Inputs menu already covers; TCL's Quick
+         panel, which the Input button opens). -->
     <string-array name="hidden_apps">
         <item>com.mediatek.wwtv.tvcenter</item>
         <item>com.mitv.gallery</item>
+        <item>com.tcl.tv</item>
+        <item>com.tcl.suspension</item>
     </string-array>
 
     <!-- The TV's Live TV / tuner app, offered at the end of the Inputs menu. Leave empty to omit. -->
@@ -53,8 +56,11 @@
     <!-- The same by Android keycode, for buttons whose scancode is shared. TCL Google TV remotes send their
          Settings button as keycode 83 (KEYCODE_NOTIFICATION, which the stock Google TV home turned into its quick
          settings panel) on scancode 240 (KEY_UNKNOWN), the scancode several TCL buttons share. Find the keycode
-         with `tools/tv.py 'logcat -v time -s InputReader:D'` while pressing the button. Leave empty to omit. -->
+         with `tools/tv.py 'logcat -v time -s InputReader:D'` while pressing the button. TCL's Realtek Google TVs
+         (G07) send the gear as their own KEYCODE_TCL_SET, 4077, which only the stock home answered. Leave empty
+         to omit. -->
     <integer-array name="settings_key_keycodes">
+        <item>4077</item>
     </integer-array>
     <!-- What those Settings buttons open: false, the TV's Settings; true, a small glass panel at the top right
          with TV settings, Display, Network, Apps (re-enable an app) and Launcher settings, over whatever is on screen.
@@ -80,9 +86,13 @@
          YouTube button sends 190 (KEYCODE_BUTTON_3) to the stock launcher, so it does nothing once launcherx
          is disabled (Chromecast with Google TV, Xiaomi MiTV-AXFR2): 190:com.google.android.youtube.tv brings
          it back. The KTC LUMIO VISION remote (Realtek Google TV) sends Netflix 191, YouTube 190, Prime Video 195
-         and TL;DR 200. A listed app that is not installed leaves the button doing nothing. Leave empty to omit. -->
+         and TL;DR 200. TCL's Realtek Google TVs (G07) send KEYCODE_TCL_NETFLIX 4062 and KEYCODE_TCL_YOUTUBE 4065,
+         broadcasts only the stock home answered. A listed app that is not installed leaves the button doing
+         nothing. Leave empty to omit. -->
     <string-array name="app_keys" translatable="false">
         <item>190:com.google.android.youtube.tv</item>
+        <item>4062:com.netflix.ninja</item>
+        <item>4065:com.google.android.youtube.tv</item>
     </string-array>
 
     <!-- Show the Solar Hijri (Shamsi) date used in Iran and Afghanistan, e.g. "27 Mehr 1405", above the

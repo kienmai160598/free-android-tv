@@ -21,11 +21,14 @@ import android.graphics.Paint;
 import android.graphics.RadialGradient;
 import android.graphics.Rect;
 import android.graphics.RenderEffect;
+import android.graphics.LinearGradient;
 import android.graphics.Shader;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.content.res.ColorStateList;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.RectShape;
 import android.graphics.drawable.Drawable;
 import android.media.tv.TvContract;
 import android.media.tv.TvInputInfo;
@@ -117,7 +120,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private String sourcePanelAction;
 
     private AppAdapter adapter;
-    private RecyclerView grid;
+    private HomeGrid grid;
+    /** Behind the header, over the grid: rows scrolled under the header fade into it. */
+    private View headerScrim;
+    /** How far down the scrim stays solid: the header's own bottom. */
+    private int scrimSolidPx;
     private FrameLayout root;
     private WallpaperPlayer wallpaperPlayer;
     private GlassView glass;
@@ -369,6 +376,15 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         hiddenApps = new HashSet<>(cfg.hiddenApps);
 
         grid = findViewById(R.id.grid);
+        // The header floats over the top of the grid; rows sit below it at rest and scroll up under it.
+        View headerRow = findViewById(R.id.headerRow);
+        headerScrim = findViewById(R.id.headerScrim);
+        int headerGap = (int) (HEADER_GAP_DP * density);
+        grid.setUnderlapSource(() -> headerRow.getMeasuredHeight() + headerGap);
+        headerRow.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
+            grid.headerChanged();
+            sizeHeaderScrim(b - t);
+        });
         rtlAppGrid = getResources().getBoolean(R.bool.rtl_app_grid);
         // Mirror only the app grid; the header and other locales keep their own layouts.
         grid.setLayoutManager(new GridLayoutManager(this, COLUMNS) {
@@ -398,7 +414,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 // in still stops at the padding line, clear of the screen edge, as before.
                 int limitBottom = getHeight() - getPaddingBottom();
                 int dy;
-                if (top < 0) dy = top;
+                if (top < grid.underlap()) dy = top - grid.underlap();
                 else if (bottom <= getHeight()) dy = 0;
                 else dy = Math.min(top, bottom - limitBottom);
                 if (dy == 0) return false;
@@ -504,6 +520,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 // Every scroll, focus on a tile or not, or the backdrop's parallax drifts from the grid.
                 if (backdrop != null) backdrop.onGridScrolled(dy);
                 widgets.onGridScrolled(rv);
+                fadeHeaderScrim();
                 if (!glassShown) return;
                 glassTargetY -= dy;
                 glassScrollShift -= dy;
@@ -723,6 +740,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     /** Rebuilds the tiles (and the module cards), then puts focus back where it was. */
     private void updateGridPadding(int width, int height) {
+        // Sized and placed as if the grid began below the header, which covers its top.
+        int underlap = grid.underlap();
+        height -= underlap;
         int rowsBelowDock = homeConfig.rowsBelowDock;
         // Item height follows the tile size, which follows the columns and the rows that must fit (AppAdapter.tileWidthPx).
         int inner = width - grid.getPaddingLeft() - grid.getPaddingRight();
@@ -744,9 +764,53 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (MainActivity.this.dockRow && homeConfig.dockTitle && rowsBelowDock > 0) want = Math.max(want, (int) (AppAdapter.TITLE_ROOM_DP * density));
         // No dock to push down: the grid starts at the top, with room for the first row's zoom and glass.
         if (!MainActivity.this.dockRow) want = (int) (AppAdapter.TOP_ROOM_DP * density);
+        want += underlap;
         if (grid.getPaddingTop() != want) {
             grid.setPadding(grid.getPaddingLeft(), want, grid.getPaddingRight(), grid.getPaddingBottom());
         }
+    }
+
+    /** The gap between the header and the first row at rest. */
+    private static final float HEADER_GAP_DP = 10;
+    /** How far below the header the scrim fades out, and how much scrolling fades it in. */
+    private static final float HEADER_FADE_DP = 40;
+
+    /** Down to the header's bottom and on past it, where it fades out. */
+    private void sizeHeaderScrim(int headerBottom) {
+        int height = headerBottom + (int) (HEADER_FADE_DP * density);
+        ViewGroup.LayoutParams lp = headerScrim.getLayoutParams();
+        if (lp.height == height && scrimSolidPx == headerBottom) return;
+        scrimSolidPx = headerBottom;
+        lp.height = height;
+        headerScrim.setLayoutParams(lp);
+        if (shownPalette != null) paintHeaderScrim(shownPalette);
+    }
+
+    /**
+     * The page colour, solid behind the clock and the buttons and thinning out to nothing below them: a row
+     * scrolled under the header fades out from below, as a progressive blur would, without the blur these GPUs
+     * cannot afford.
+     */
+    private void paintHeaderScrim(Palette p) {
+        int surface = p.surface, clear = surface & 0x00FFFFFF;
+        int solid = scrimSolidPx;
+        ShapeDrawable scrim = new ShapeDrawable(new RectShape());
+        scrim.setShaderFactory(new ShapeDrawable.ShaderFactory() {
+            @Override
+            public Shader resize(int width, int height) {
+                float solidEnd = height > 0 ? Math.min(1f, solid / (float) height) : 0f;
+                return new LinearGradient(0, 0, 0, height,
+                        new int[]{surface, surface, clear | 0x99000000, clear},
+                        new float[]{0f, solidEnd, solidEnd + (1f - solidEnd) / 2f, 1f}, Shader.TileMode.CLAMP);
+            }
+        });
+        headerScrim.setBackground(scrim);
+    }
+
+    /** No scrim while nothing is under the header; it comes in over the first rows' worth of scroll. */
+    private void fadeHeaderScrim() {
+        float alpha = Math.min(1f, grid.computeVerticalScrollOffset() / (HEADER_FADE_DP * density));
+        if (headerScrim.getAlpha() != alpha) headerScrim.setAlpha(alpha);
     }
 
     /** Lays the dock out again so DockDecoration centres it for its current number of apps. */
@@ -1236,6 +1300,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         // The window behind Home shows during app transitions: same tone as the screen, never a black flash.
         getWindow().setBackgroundDrawable(new ColorDrawable(p.surface));
         if (!wallpaperShown()) root.setBackgroundColor(p.surface);
+        paintHeaderScrim(p);
         if (backdrop != null) backdrop.setPalette(p);
         if (widgets != null) widgets.setPalette(p);
         if (editBar != null) {

@@ -64,7 +64,10 @@ final class SystemPages {
         this.context = context;
     }
 
-    /** The page's lines; cpu is CpuMeter's last figure, or CpuMeter.NOT_YET. Usage leaves CPU out when asked. */
+    /**
+     * The page's lines; cpu is CpuMeter's last figure, CpuMeter.NOT_YET or CpuMeter.UNAVAILABLE. Usage leaves CPU
+     * out when asked, and both pages leave it out when the TV hides it.
+     */
     List<Line> lines(int page, int cpu, boolean showCpu) {
         switch (page) {
             case NETWORK: return network();
@@ -77,7 +80,7 @@ final class SystemPages {
 
     private List<Line> usage(int cpu, boolean showCpu) {
         List<Line> lines = new ArrayList<>();
-        if (showCpu) lines.add(cpuLine(cpu));
+        if (showCpu && cpu != CpuMeter.UNAVAILABLE) lines.add(cpuLine(cpu));
         ActivityManager.MemoryInfo memory = memory();
         long usedMemory = memory.totalMem - memory.availMem;
         lines.add(new Line(R.drawable.ic_ram, text(R.string.widget_ram), usedOf(usedMemory, memory.totalMem),
@@ -140,7 +143,7 @@ final class SystemPages {
 
     private List<Line> chip(int cpu) {
         List<Line> lines = new ArrayList<>();
-        lines.add(cpuLine(cpu));
+        if (cpu != CpuMeter.UNAVAILABLE) lines.add(cpuLine(cpu));
         lines.add(new Line(R.drawable.ic_speed, text(R.string.sys_clock), clock(), Line.NO_BAR));
         lines.add(new Line(R.drawable.ic_thermostat, text(R.string.sys_thermal), thermal(), Line.NO_BAR));
         return lines;
